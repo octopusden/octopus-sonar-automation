@@ -64,10 +64,15 @@ tasks.named("build") {
 tasks.register<Zip>("zipMetarunners") {
     archiveFileName = "metarunners.zip"
     from(layout.projectDirectory.dir("metarunners")) {
-        expand(
-            "name" to project.name,
-            "version" to project.version,
-            "group" to project.group
+        filter(
+            org.apache.tools.ant.filters.ReplaceTokens::class,
+            "tokens" to mapOf(
+                "name" to project.name,
+                "version" to project.version.toString(),
+                "group" to project.group.toString()
+            ),
+            "beginToken" to "\${",
+            "endToken" to "}"
         )
     }
 }
