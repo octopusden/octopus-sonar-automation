@@ -53,7 +53,7 @@ class SonarParametersCalculatorTest {
             componentName = "my-component",
             componentVersion = "1.0.0",
             teamcityBuildId = 42,
-            sonarConfigDir = null,
+            sonarConfigDir = java.nio.file.Path.of("/unused"),
             commitStampResolver = commitStampResolver,
             targetBranchResolver = targetBranchResolver,
             sonarServerResolver = sonarServerResolver,

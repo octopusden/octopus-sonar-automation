@@ -11,6 +11,8 @@ A command-line tool that automates SonarQube analysis within TeamCity builds. In
 | `calculate-sonar-params` | Resolves and injects SonarQube parameters into the current TeamCity build | [Calculate Sonar Parameters](docs/calculate-sonar-parameters.md) |
 | `generate-sonar-report` | Checks quality gate, notifies TeamCity, and generates an HTML SAST report | [Generate Sonar Report](docs/generate-sonar-report.md) |
 
+See also: [Tech Debt](docs/tech-debt.md)
+
 ---
 
 ## Quick Start

@@ -102,19 +102,7 @@ class ClassicSonarClient(
         )
     )
 
-    /**
-     * Translates a branch identifier into the correct SonarQube query parameter.
-     *
-     * If [branch] contains `"pull-request"`, the pull-request number is extracted
-     * and returned as `pullRequest=<number>`. Otherwise, `branch=<name>` is used.
-     */
-    private fun branchParams(branch: String): Map<String, Any> {
-        return if (branch.contains("pull-request")) {
-            mapOf("pullRequest" to branch.substringAfter("pull-requests/"))
-        } else {
-            mapOf("branch" to branch)
-        }
-    }
+    private fun branchParams(branch: String): Map<String, Any> = ClassicSonarClient.branchParams(branch)
 
     private fun buildClient(): SonarFeignApi =
         Feign.builder()
@@ -140,6 +128,17 @@ class ClassicSonarClient(
             .target(SonarFeignApi::class.java, parametersProvider.getBaseUrl())
 
     companion object {
+        /**
+         * Translates a branch identifier into the correct SonarQube query parameter map.
+         */
+        internal fun branchParams(branch: String): Map<String, Any> {
+            return if (branch.contains("pull-requests/")) {
+                mapOf("pullRequest" to branch.substringAfter("pull-requests/"))
+            } else {
+                mapOf("branch" to branch)
+            }
+        }
+
         private fun defaultMapper(): ObjectMapper =
             jacksonObjectMapper().apply {
                 configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

@@ -7,7 +7,7 @@ import org.octopusden.octopus.sonar.util.BitbucketSshUrlParser
 import org.octopusden.octopus.sonar.util.normalizedBranch
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
 import org.octopusden.octopus.components.registry.core.dto.VersionControlSystemRootDTO
-import java.util.logging.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Resolves the VCS context for the current TeamCity build by matching the build's revision list
@@ -87,7 +87,7 @@ class CommitStampResolver(
      */
     private fun resolveWithoutVcsSettings(commitStamps: List<CommitStampDTO>): ResolvedVCSDTO {
         if (commitStamps.size > 1) {
-            logger.warning(
+            logger.warn(
                 "externalRegistry is $NOT_AVAILABLE_EXTERNAL_REGISTRY but ${commitStamps.size} commit stamps found — using the first one."
             )
         }
@@ -135,7 +135,7 @@ class CommitStampResolver(
     }
 
     companion object {
-        private val logger = Logger.getLogger(CommitStampResolver::class.java.name)
+        private val logger = LoggerFactory.getLogger(CommitStampResolver::class.java)
 
         private const val VCS_NAME_CVS = "cvs"
         private const val NOT_AVAILABLE_EXTERNAL_REGISTRY = "NOT_AVAILABLE"

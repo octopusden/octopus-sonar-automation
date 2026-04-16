@@ -4,9 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.logging.Logger
 
 /**
  * Sonar project override for applied-SAST and other pre-configured components.
@@ -21,11 +21,9 @@ data class SonarProjectOverride(
  */
 class SonarExecutionResolver(
     private val crsClient: ComponentsRegistryServiceClient,
-    configDir: Path? = null,
+    configDir: Path,
 ) {
-    private val externalConfigDir: Path = requireNotNull(configDir) {
-        "Sonar config directory is required. Provide --sonar-config-dir with applied-sast.json, other-doc-components.txt, mismatch-java-version.txt"
-    }
+    private val externalConfigDir: Path = configDir
 
     private val appliedSastComponents: Map<String, SonarProjectOverride> = loadAppliedSast(externalConfigDir)
     private val otherDocComponents: Set<String> = loadList(externalConfigDir, OTHER_DOC_FILE)
@@ -113,7 +111,7 @@ class SonarExecutionResolver(
     }
 
     companion object {
-        private val logger = Logger.getLogger(SonarExecutionResolver::class.java.name)
+        private val logger = LoggerFactory.getLogger(SonarExecutionResolver::class.java)
         private val objectMapper: ObjectMapper = jacksonObjectMapper()
 
         private const val APPLIED_SAST_FILE = "applied-sast.json"

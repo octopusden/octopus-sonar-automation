@@ -3,8 +3,8 @@ package org.octopusden.octopus.sonar.resolver.parameters
 import org.octopusden.octopus.sonar.dto.CommitStampDTO
 import org.octopusden.octopus.vcsfacade.client.common.exception.NotFoundException
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
+import org.slf4j.LoggerFactory
 import java.util.Date
-import java.util.logging.Logger
 
 /**
  * Resolves the Sonar target branch for a given regular-branch build.
@@ -44,13 +44,13 @@ class TargetBranchResolver(
         val sourceHashesByWindow = mutableMapOf<Int, List<String>>()
 
         candidateLoop@ for (candidate in candidates) {
-            logger.fine("Evaluating candidate '$candidate'")
+            logger.debug("Evaluating candidate '{}'", candidate)
 
             for (windowDays in windowDaysList) {
                 val sourceBranchHashes = runCatching {
                     sourceHashesByWindow.getOrPut(windowDays) {
                         val fromDate = Date(nowProviderMillis() - windowDays * DAY_IN_MILLIS)
-                        logger.fine("Fetching source commits using last $windowDays days window")
+                        logger.debug("Fetching source commits using last {} days window", windowDays)
                         vcsFacadeClient.getCommits(
                             commit.vcsUrl,
                             fromDate = fromDate,
@@ -59,12 +59,12 @@ class TargetBranchResolver(
                         ).map { it.hash }
                     }
                 }.getOrElse {
-                    logger.warning("Failed to fetch commits for source branch '${commit.branch}': ${it.message}")
+                    logger.warn("Failed to fetch commits for source branch '{}': {}", commit.branch, it.message)
                     return candidates.first()
                 }
 
                 if (sourceBranchHashes.isEmpty()) {
-                    logger.fine("No commits found on '${commit.branch}' in the last $windowDays days")
+                    logger.debug("No commits found on '{}' in the last {} days", commit.branch, windowDays)
                     continue
                 }
 
@@ -77,22 +77,22 @@ class TargetBranchResolver(
                         fromHashOrRef = null,
                     ).asSequence().map { it.hash }.toHashSet()
                 } catch (_: NotFoundException) {
-                    logger.warning("Candidate branch '$candidate' not found in VCS Facade - skipping")
+                    logger.warn("Candidate branch '{}' not found in VCS Facade - skipping", candidate)
                     continue@candidateLoop
                 } catch (e: Exception) {
-                    logger.warning("Failed to fetch commits for candidate '$candidate': ${e.message}")
+                    logger.warn("Failed to fetch commits for candidate '{}': {}", candidate, e.message)
                     continue@candidateLoop
                 }
 
                 val commonHash = sourceBranchHashes.firstOrNull { it in candidateHashes }
                 if (commonHash != null) {
-                    logger.info("'${commit.branch}' diverged from '$candidate' at commit $commonHash")
+                    logger.info("'{}' diverged from '{}' at commit {}", commit.branch, candidate, commonHash)
                     return candidate
                 }
             }
         }
 
-        logger.warning("Could not determine target branch from $candidates - falling back to '${candidates.first()}'")
+        logger.warn("Could not determine target branch from {} - falling back to '{}'", candidates, candidates.first())
         return candidates.first()
     }
 
@@ -115,7 +115,7 @@ class TargetBranchResolver(
     }
 
     companion object {
-        private val logger = Logger.getLogger(TargetBranchResolver::class.java.name)
+        private val logger = LoggerFactory.getLogger(TargetBranchResolver::class.java)
         private const val DAY_IN_MILLIS = 24L * 60 * 60 * 1000
     }
 }

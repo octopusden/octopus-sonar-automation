@@ -20,7 +20,7 @@ class SonarParametersCalculator(
     private val componentName: String,
     private val componentVersion: String,
     private val teamcityBuildId: Int,
-    private val sonarConfigDir: Path? = null,
+    private val sonarConfigDir: Path,
 
     private val commitStampResolver: CommitStampResolver = CommitStampResolver(teamcityClient, crsClient),
     private val targetBranchResolver: TargetBranchResolver = TargetBranchResolver(vcsFacadeClient),

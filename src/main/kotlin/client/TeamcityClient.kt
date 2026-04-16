@@ -4,6 +4,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.Duration
 import java.util.Base64
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -18,7 +19,9 @@ class TeamcityRestClient(
     password: String
 ) {
 
-    private val client: HttpClient = HttpClient.newHttpClient()
+    private val client: HttpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(30))
+        .build()
     private val objectMapper = jacksonObjectMapper()
 
     private val authHeader: String = "Basic " + Base64.getEncoder()
@@ -33,6 +36,7 @@ class TeamcityRestClient(
             .uri(URI.create("$baseUrl/app/rest/$path"))
             .header("Accept", "application/json")
             .header("Authorization", authHeader)
+            .timeout(Duration.ofSeconds(60))
             .GET()
             .build()
 
