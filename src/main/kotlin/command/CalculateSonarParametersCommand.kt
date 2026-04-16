@@ -77,10 +77,17 @@ class CalculateSonarParametersCommand : CliktCommand(
        setTeamcityParameter(SKIP_SONAR_REPORT_GENERATION_PARAMETER, params.skipSonarReportGeneration.toString())
     }
 
-    private fun setTeamcityParameter(name: String, value: String) {
-        echo("##teamcity[setParameter name='$name' value='$value']")
-    }
+    private fun escapeTcValue(value: String): String = value
+        .replace("|", "||")
+        .replace("'", "|'")
+        .replace("\n", "|n")
+        .replace("\r", "|r")
+        .replace("[", "|[")
+        .replace("]", "|]")
 
+    private fun setTeamcityParameter(name: String, value: String) {
+        echo("##teamcity[setParameter name='$name' value='${escapeTcValue(value)}']")
+    }
     companion object {
         const val TEAMCITY_URL_OPTION = "--teamcity-url"
         const val TEAMCITY_USER_OPTION = "--teamcity-user"
