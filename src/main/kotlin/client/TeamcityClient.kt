@@ -14,8 +14,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
  */
 class TeamcityApiException(
     val path: String,
-    val statusCode: Int,
-    val responseBody: String,
+    statusCode: Int,
+    responseBody: String,
 ) : RuntimeException("TeamCity REST request failed for '$path': HTTP $statusCode — $responseBody")
 
 /**

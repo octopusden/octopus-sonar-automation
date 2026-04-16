@@ -48,15 +48,23 @@ class CommitStampResolver(
     private fun extractCommitStamps(teamcityBuildId: Int): List<CommitStampDTO> {
         val response = teamcityClient.getBuildById(teamcityBuildId)
         val revisions = response["revisions"] as? Map<String, Any> ?: emptyMap()
+        val vcsRootCache = mutableMapOf<Int, Map<String, Any>>()
 
         return (revisions["revision"] as? List<Map<String, Any>> ?: emptyList())
-            .mapNotNull { entry -> parseRevision(entry) }
+            .mapNotNull { entry ->
+                parseRevision(entry) { id ->
+                        vcsRootCache.getOrPut(id) { teamcityClient.getVcsRootInstance(id) }
+                    }
+            }
     }
 
     /**
      * Parses a single revision entry from the TeamCity build response into a [CommitStampDTO]
      */
-    private fun parseRevision(entry: Map<String, Any>): CommitStampDTO? {
+    private fun parseRevision(
+        entry: Map<String, Any>,
+        getVcsRoot: (Int) -> Map<String, Any>
+    ): CommitStampDTO? {
         val cid    = entry["version"]      as? String ?: return null
         val branch = entry["vcsBranchName"] as? String ?: return null
 
@@ -64,7 +72,7 @@ class CommitStampResolver(
             ?.get("id")?.toString()?.toIntOrNull()
             ?: return null
 
-        val vcsRoot = teamcityClient.getVcsRootInstance(vcsRootInstanceId)
+        val vcsRoot = getVcsRoot(vcsRootInstanceId)
 
         if (vcsRoot["vcsName"] == VCS_NAME_CVS) return null
 

@@ -140,7 +140,7 @@ class TeamCityNotifierTest {
 
         assertEquals(1, messages.size)
         assertTrue(messages[0].contains("pullRequest=42"), "Should use pullRequest param instead of branch")
-        assertFalse(messages[0].contains("branch=pull-request"), "Should not contain raw branch param")
+        assertFalse(messages[0].contains("branch="), "Should not use branch param for pull-request branches")
     }
 
     @Test

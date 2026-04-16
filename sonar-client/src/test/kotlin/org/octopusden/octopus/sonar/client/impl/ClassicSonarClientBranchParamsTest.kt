@@ -55,4 +55,10 @@ class ClassicSonarClientBranchParamsTest {
     fun `empty branch name returns branch param`() {
         assertEquals(mapOf("branch" to ""), ClassicSonarClient.branchParams(""))
     }
+
+    @Test
+    fun `branch containing pull-requests token in middle is treated as regular branch`() {
+        val branch = "feature/pull-requests/42-fix"
+        assertEquals(mapOf("branch" to branch), ClassicSonarClient.branchParams(branch))
+    }
 }

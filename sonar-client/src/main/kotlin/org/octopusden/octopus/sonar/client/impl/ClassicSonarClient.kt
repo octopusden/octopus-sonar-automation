@@ -125,7 +125,7 @@ class ClassicSonarClient(
          * Translates a branch identifier into the correct SonarQube query parameter map.
          */
         internal fun branchParams(branch: String): Map<String, Any> {
-            return if (branch.contains("pull-requests/")) {
+            return if (branch.startsWith("pull-requests/")) {
                 mapOf("pullRequest" to branch.substringAfter("pull-requests/"))
             } else {
                 mapOf("branch" to branch)

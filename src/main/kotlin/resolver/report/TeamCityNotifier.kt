@@ -68,7 +68,7 @@ class TeamCityNotifier(
          * `"pull-requests/123"` → `"pullRequest=123"`, otherwise `"branch=<name>"`.
          */
         fun branchOrPrParam(branch: String): String {
-            return if (branch.contains("pull-requests")) {
+            return if (branch.startsWith("pull-requests")) {
                 "pullRequest=${branch.substringAfter("pull-requests/")}"
             } else {
                 "branch=$branch"
