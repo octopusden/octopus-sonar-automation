@@ -161,6 +161,19 @@ class SonarExecutionResolverTest {
         assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
     }
 
+    @Test
+    fun `metarunner skipped for java component with old javaVersion but in mismatch list`() {
+        // mismatch-java-component is in mismatch-java-version.txt, meaning it actually uses modern JDK
+        every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "8")
+        assertTrue(resolver.skipSonarMetarunnerExecution("mismatch-java-component", "1.0"))
+    }
+
+    @Test
+    fun `metarunner not skipped for non-java non-kotlin component even with modern javaVersion`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("python"), javaVersion = "17")
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     // skipSonarReportGeneration
     // ════════════════════════════════════════════════════════════════════════

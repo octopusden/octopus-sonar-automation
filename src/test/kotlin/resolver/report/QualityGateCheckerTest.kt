@@ -98,5 +98,47 @@ class QualityGateCheckerTest {
         assertTrue(result.hasFailedMetrics)
         assertEquals(listOf("security", "security hotspots"), result.failedMetrics)
     }
-}
 
+    @Test
+    fun `all metrics at best value returns empty failed metrics`() {
+        every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("OK")
+        every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse(
+            MeasureDTO("software_quality_reliability_rating", "1.0", true),
+            MeasureDTO("software_quality_security_rating", "1.0", true),
+            MeasureDTO("software_quality_maintainability_rating", "1.0", true),
+            MeasureDTO("security_review_rating", "1.0", true),
+        )
+
+        val result = checker.check("proj", "master")
+
+        assertEquals(emptyList(), result.failedMetrics)
+    }
+
+    @Test
+    fun `no measures returned results in empty failed metrics`() {
+        every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("OK")
+        every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse()
+
+        val result = checker.check("proj", "master")
+
+        assertEquals(emptyList(), result.failedMetrics)
+    }
+
+    @Test
+    fun `combined failed gate with new issues and failed metrics`() {
+        every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("ERROR")
+        every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(10)
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse(
+            MeasureDTO("software_quality_reliability_rating", "3.0", false),
+        )
+
+        val result = checker.check("proj", "master")
+
+        assertFalse(result.isQualityGatePassed)
+        assertTrue(result.hasNewIssues)
+        assertTrue(result.hasFailedMetrics)
+        assertEquals(listOf("reliability"), result.failedMetrics)
+    }
+}

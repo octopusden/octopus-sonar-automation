@@ -168,4 +168,40 @@ class SonarParametersCalculatorTest {
         bbProjectKey = "MYPROJ",
         bbRepositoryKey = "my-repo"
     )
+
+    @Test
+    fun `production branch build sets source and target to same branch`() {
+        val resolvedVcs = resolvedVcs(branch = "main")
+        every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
+        every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
+        every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
+        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
+
+        val result = calculator.calculate()
+
+        assertEquals("main", result.sonarSourceBranch)
+        assertEquals("main", result.sonarTargetBranch)
+        assertEquals(
+            SonarParameterBuilder.forBranch("main", "main"),
+            result.sonarExtraParameters
+        )
+    }
+
+    @Test
+    fun `developer edition server is propagated`() {
+        val resolvedVcs = resolvedVcs(branch = "main")
+        every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
+        every { targetBranchResolver.findTargetBranch(any(), any()) } returns "main"
+        every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.DEVELOPER
+        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
+
+        val result = calculator.calculate()
+
+        assertEquals(SonarServerParametersDTO.DEVELOPER.id, result.sonarServerId)
+        assertEquals(SonarServerParametersDTO.DEVELOPER.url, result.sonarServerUrl)
+    }
 }

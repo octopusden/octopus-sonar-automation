@@ -183,4 +183,30 @@ class TeamCityNotifierTest {
         assertTrue(messages[0].contains("https://sonar.example.com/dashboard"))
         assertFalse(messages[0].contains("https://sonar.example.com//dashboard"))
     }
+
+    // ── quality gate failed on feature branch ────────────────────────────────
+
+    @Test
+    fun `quality gate failed on feature branch still emits only buildProblem`() {
+        val result = QualityGateCheckResult("ERROR", newIssueCount = 5, failedMetrics = listOf("security"))
+
+        val messages = featureNotifier.buildMessages(result)
+
+        assertEquals(1, messages.size)
+        assertTrue(messages[0].contains("##teamcity[buildProblem"))
+        assertTrue(messages[0].contains("Sonar Quality Gate FAILED"))
+        assertTrue(messages[0].contains("branch=feature/abc"))
+    }
+
+    // ── multiple failed metrics formatting ───────────────────────────────────
+
+    @Test
+    fun `multiple failed metrics are comma-separated in production warning`() {
+        val result = QualityGateCheckResult("OK", newIssueCount = 0, failedMetrics = listOf("reliability", "security", "maintainability"))
+
+        val messages = productionNotifier.buildMessages(result)
+
+        assertEquals(1, messages.size)
+        assertTrue(messages[0].contains("reliability, security, maintainability rating(s) below target"))
+    }
 }
