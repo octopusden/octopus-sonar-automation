@@ -65,6 +65,13 @@ class TargetBranchResolverTest {
     // ── source branch is itself a candidate ────────────────────────────────────
 
     @Test
+    fun `returns single candidate immediately without VCS calls`() {
+        val result = resolver.findTargetBranch(stamp("feature/abc"), listOf("main"))
+        assertEquals("main", result)
+        verify(exactly = 0) { vcsFacadeClient.getCommits(any(), any(), any(), any()) }
+    }
+
+    @Test
     fun `returns source branch immediately when it is in the candidates list`() {
         val result = resolver.findTargetBranch(stamp("main"), listOf("main", "master"))
         assertEquals("main", result)
@@ -214,6 +221,35 @@ class TargetBranchResolverTest {
                 fromDate = any(),
                 fromHashOrRef = null,
             )
+        }
+    }
+
+    // ── findTargetBranchBestEffort ──────────────────────────────────────────
+
+    @Test
+    fun `best-effort returns source branch when it matches a candidate`() {
+        val result = resolver.findTargetBranchBestEffort(stamp("main"), listOf("main", "master"))
+        assertEquals("main", result)
+        verify(exactly = 0) { vcsFacadeClient.getCommits(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `best-effort returns first candidate when source branch does not match`() {
+        val result = resolver.findTargetBranchBestEffort(stamp("feature/abc"), listOf("main", "master"))
+        assertEquals("main", result)
+        verify(exactly = 0) { vcsFacadeClient.getCommits(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `best-effort returns single candidate regardless of source branch`() {
+        val result = resolver.findTargetBranchBestEffort(stamp("feature/xyz"), listOf("main"))
+        assertEquals("main", result)
+    }
+
+    @Test
+    fun `best-effort throws when candidates list is empty`() {
+        assertFailsWith<IllegalArgumentException> {
+            resolver.findTargetBranchBestEffort(stamp("feature/abc"), emptyList())
         }
     }
 

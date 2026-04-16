@@ -87,9 +87,11 @@ class SonarParametersCalculator(
         sastOverride: SonarProjectOverride?
     ): BranchContext {
         if (sastOverride != null) {
+            val candidates = resolvedVcs.defaultBranches.ifEmpty { DEFAULT_BRANCH_CANDIDATES }
+            val targetBranch = targetBranchResolver.findTargetBranchBestEffort(resolvedVcs.commit, candidates)
             return BranchContext(
                 sourceBranch = resolvedVcs.commit.branch,
-                targetBranch = "",
+                targetBranch = targetBranch,
                 sonarExtraParameters = ""
             )
         }

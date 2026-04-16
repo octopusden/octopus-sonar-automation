@@ -35,6 +35,11 @@ class TargetBranchResolver(
     fun findTargetBranch(commit: CommitStampDTO, candidates: List<String>): String {
         require(candidates.isNotEmpty()) { "candidates must not be empty" }
 
+        if (candidates.size == 1) {
+            logger.info("Only one candidate '{}' - returning it as target", candidates.first())
+            return candidates.first()
+        }
+
         if (commit.branch in candidates) {
             logger.info("Source branch '${commit.branch}' is itself a candidate - returning it as target")
             return commit.branch
@@ -93,6 +98,24 @@ class TargetBranchResolver(
         }
 
         logger.warn("Could not determine target branch from {} - falling back to '{}'", candidates, candidates.first())
+        return candidates.first()
+    }
+
+    /**
+     * Best-effort target branch resolution without VCS Facade calls.
+     *
+     * Returns the source branch if it matches any candidate, otherwise returns the first candidate.
+     * Used for applied-SAST components where exact diverge-point detection is not required.
+     */
+    fun findTargetBranchBestEffort(commit: CommitStampDTO, candidates: List<String>): String {
+        require(candidates.isNotEmpty()) { "candidates must not be empty" }
+
+        if (commit.branch in candidates) {
+            logger.info("Best-effort: source branch '{}' matches candidate - returning it", commit.branch)
+            return commit.branch
+        }
+
+        logger.info("Best-effort: source branch '{}' not in candidates {} - returning first", commit.branch, candidates)
         return candidates.first()
     }
 

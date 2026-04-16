@@ -115,13 +115,14 @@ class SonarParametersCalculatorTest {
     }
 
     @Test
-    fun `applied sast override keeps project override and clears branch comparison parameters`() {
+    fun `applied sast override keeps project override and resolves target branch best-effort`() {
         val resolvedVcs = resolvedVcs(branch = "pull-requests/456")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
             sonarProjectKey = "OVERRIDE_KEY",
             sonarProjectName = "OVERRIDE/NAME"
         )
+        every { targetBranchResolver.findTargetBranchBestEffort(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns true
@@ -131,20 +132,44 @@ class SonarParametersCalculatorTest {
         assertEquals("OVERRIDE_KEY", result.sonarProjectKey)
         assertEquals("OVERRIDE/NAME", result.sonarProjectName)
         assertEquals("pull-requests/456", result.sonarSourceBranch)
-        assertEquals("", result.sonarTargetBranch)
+        assertEquals("main", result.sonarTargetBranch)
+        assertEquals("", result.sonarExtraParameters)
+
+        verify(exactly = 0) { targetBranchResolver.findTargetBranch(any(), any()) }
+        verify(exactly = 1) { targetBranchResolver.findTargetBranchBestEffort(any(), any()) }
+    }
+
+    @Test
+    fun `applied sast override on production branch returns matching target branch`() {
+        val resolvedVcs = resolvedVcs(branch = "main")
+        every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
+            sonarProjectKey = "OVERRIDE_KEY",
+            sonarProjectName = "OVERRIDE/NAME"
+        )
+        every { targetBranchResolver.findTargetBranchBestEffort(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
+        every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
+        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
+        every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
+
+        val result = calculator.calculate()
+
+        assertEquals("main", result.sonarSourceBranch)
+        assertEquals("main", result.sonarTargetBranch)
         assertEquals("", result.sonarExtraParameters)
 
         verify(exactly = 0) { targetBranchResolver.findTargetBranch(any(), any()) }
     }
 
     @Test
-    fun `applied sast override on regular branch keeps resolved source branch`() {
+    fun `applied sast override on feature branch returns first candidate as target`() {
         val resolvedVcs = resolvedVcs(branch = "feature/hotfix-1")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
             sonarProjectKey = "OVERRIDE_KEY",
             sonarProjectName = "OVERRIDE/NAME"
         )
+        every { targetBranchResolver.findTargetBranchBestEffort(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
@@ -152,7 +177,7 @@ class SonarParametersCalculatorTest {
         val result = calculator.calculate()
 
         assertEquals("feature/hotfix-1", result.sonarSourceBranch)
-        assertEquals("", result.sonarTargetBranch)
+        assertEquals("main", result.sonarTargetBranch)
         assertEquals("", result.sonarExtraParameters)
 
         verify(exactly = 0) { targetBranchResolver.findTargetBranch(any(), any()) }
