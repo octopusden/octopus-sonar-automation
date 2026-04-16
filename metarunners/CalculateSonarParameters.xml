@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="Calculate Sonar Parameters">
+    <description>
+        Depends on following TeamCity parameters:
+        * TEAMCITY_URL
+        * TEAMCITY_USER
+        * TEAMCITY_PASSWORD
+        * COMPONENT_REGISTRY_URL
+        * VCS_FACADE_URL
+        * GIT_SERVER_HOSTNAME
+        Sets TeamCity parameters for SonarQube analysis:
+        * SONAR_PROJECT_KEY
+        * SONAR_PROJECT_NAME
+        * SONAR_SOURCE_BRANCH
+        * SONAR_TARGET_BRANCH
+        * SONAR_SERVER_ID
+        * SONAR_SERVER_URL
+        * SONAR_EXTRA_PARAMETERS
+        * SKIP_SONAR_METARUNNER_EXECUTION
+        * SKIP_SONAR_REPORT_GENERATION
+    </description>
+    <settings>
+        <parameters>
+            <param name="TEAMCITY_BUILD_ID" value="%teamcity.build.id%" />
+            <param name="COMPONENT_NAME" value="%COMPONENT_NAME%" />
+            <param name="COMPONENT_VERSION" value="%BUILD_VERSION%" />
+            <param name="SONAR_CONFIG_DIR" value="sonar-config" />
+        </parameters>
+        <build-runners>
+            <runner name="Checkout Sonar Configuration" type="CloneGitRepository">
+                <parameters>
+                    <param name="REPOSITORY_URL" value="ssh://git@%GIT_SERVER_HOSTNAME%/releng/sonar-config.git" />
+                    <param name="BRANCH" value="master" />
+                    <param name="DIRECTORY" value="%SONAR_CONFIG_DIR%" />
+                    <param name="REUSE" value="false" />
+                </parameters>
+            </runner>
+            <runner name="Download sonar-automation JAR" type="DownloadSonarAutomationJAR"/>
+            <runner name="Calculate Sonar Parameters" type="simpleRunner">
+                <parameters>
+                    <param name="script.content"><![CDATA[
+"%env.JDK_21_0_x64%/bin/java" -jar "./.sonar-automation/sonar-automation-${version}.jar" \
+  calculate-sonar-params \
+  --teamcity-url "%TEAMCITY_URL%" \
+  --teamcity-user "%TEAMCITY_USER%" \
+  --teamcity-password "%TEAMCITY_PASSWORD%" \
+  --teamcity-build-id "%TEAMCITY_BUILD_ID%" \
+  --components-registry-url "%COMPONENT_REGISTRY_URL%" \
+  --vcs-facade-url "%VCS_FACADE_URL%" \
+  --component-name "%COMPONENT_NAME%" \
+  --component-version "%COMPONENT_VERSION%" \
+  --sonar-config-dir "%teamcity.build.checkoutDir%/%SONAR_CONFIG_DIR%"
+]]></param>
+                    <param name="teamcity.step.mode" value="default"/>
+                    <param name="use.custom.script" value="true"/>
+                </parameters>
+            </runner>
+            <runner name="Fetch target branch" type="simpleRunner">
+                <parameters>
+                    <param name="script.content" value="git fetch origin %SONAR_TARGET_BRANCH%" />
+                    <param name="teamcity.step.mode" value="default" />
+                    <param name="use.custom.script" value="true" />
+                </parameters>
+            </runner>
+        </build-runners>
+        <requirements />
+    </settings>
+</meta-runner>
