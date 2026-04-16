@@ -130,7 +130,7 @@ For **regular branch builds**, the tool must determine which production/release 
 
 ### Example
 
-```
+```text
 Source branch: feature/ABC-123
 Candidates:   [main, master]
 

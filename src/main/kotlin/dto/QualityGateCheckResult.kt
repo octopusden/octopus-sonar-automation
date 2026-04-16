@@ -8,6 +8,9 @@ data class QualityGateCheckResult(
     val newIssueCount: Int,
     val failedMetrics: List<String>,
 ) {
+    init {
+        require(newIssueCount >= 0) { "newIssueCount must be non-negative" }
+    }
     val isQualityGatePassed: Boolean get() = qualityGateStatus == "OK"
     val hasNewIssues: Boolean get() = newIssueCount > 0
     val hasFailedMetrics: Boolean get() = failedMetrics.isNotEmpty()

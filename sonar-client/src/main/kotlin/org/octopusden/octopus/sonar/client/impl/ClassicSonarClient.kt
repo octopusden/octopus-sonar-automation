@@ -55,11 +55,6 @@ class ClassicSonarClient(
         )
     )
 
-    fun getMeasures(
-        branch: String,
-        component: String,
-        metricKeys: List<String>,
-    ): MeasuresResponseDTO = getMeasures(branch, component, metricKeys.joinToString(","))
 
     override fun getQualityGateStatus(
         branch: String,
@@ -124,7 +119,7 @@ class ClassicSonarClient(
             .encoder(JacksonEncoder(mapper))
             .decoder(JacksonDecoder(mapper))
             .logger(Slf4jLogger(SonarClient::class.java))
-            .logLevel(Logger.Level.FULL)
+            .logLevel(Logger.Level.BASIC)
             .target(SonarFeignApi::class.java, parametersProvider.getBaseUrl())
 
     companion object {

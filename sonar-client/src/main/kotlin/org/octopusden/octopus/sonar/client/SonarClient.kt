@@ -49,3 +49,13 @@ interface SonarClient {
         p: Int,
     ): HotspotsResponseDTO
 }
+
+/**
+ * Convenience overload that accepts metric keys as a [List] instead of a comma-separated string.
+ */
+fun SonarClient.getMeasures(
+    branch: String,
+    component: String,
+    metricKeys: List<String>,
+): MeasuresResponseDTO = getMeasures(branch, component, metricKeys.joinToString(","))
+

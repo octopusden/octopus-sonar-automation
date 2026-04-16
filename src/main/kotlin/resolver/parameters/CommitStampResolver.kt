@@ -110,19 +110,19 @@ class CommitStampResolver(
         commitStamps: List<CommitStampDTO>,
         roots: List<VersionControlSystemRootDTO>
     ): ResolvedVCSDTO {
-        val rootPaths = roots.map { it.vcsPath }
-        val matchedCommit = commitStamps.find { it.vcsUrl in rootPaths }
-            ?: error(
-                "None of the commit stamps matched VCS roots $rootPaths. " +
-                "Commit stamp URLs: ${commitStamps.map { it.vcsUrl }}"
-            )
+        val rootsByPath = roots.associateBy { it.vcsPath }
+        val (matchedCommit, matchedRoot) = commitStamps.firstNotNullOfOrNull { stamp ->
+            rootsByPath[stamp.vcsUrl]?.let { root -> stamp to root }
+        } ?: error(
+            "None of the commit stamps matched VCS roots ${rootsByPath.keys}. " +
+            "Commit stamp URLs: ${commitStamps.map { it.vcsUrl }}"
+        )
 
-        val matchedRoot = roots.find { it.vcsPath == matchedCommit.vcsUrl }
-        val branches = matchedRoot?.branch
-            ?.split("|")
-            ?.map { it.trim() }
-            ?.filter { it.isNotBlank() }
-            .takeIf { !it.isNullOrEmpty() }
+        val branches = matchedRoot.branch
+            .split("|")
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .ifEmpty { null }
             ?: DEFAULT_BRANCHES
 
         val (projectKey, repoKey) = BitbucketSshUrlParser.parseRepository(matchedCommit.vcsUrl)

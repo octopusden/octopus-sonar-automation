@@ -9,6 +9,7 @@
         * SONAR_PROJECT_KEY
         * SONAR_PROJECT_NAME
         * SONAR_SOURCE_BRANCH
+        * SONAR_TARGET_BRANCH
     </description>
     <settings>
         <parameters>
@@ -17,6 +18,7 @@
             <param name="SONAR_PROJECT_KEY" value="%SONAR_PROJECT_KEY%" />
             <param name="SONAR_PROJECT_NAME" value="%SONAR_PROJECT_NAME%" />
             <param name="SONAR_SOURCE_BRANCH" value="%SONAR_SOURCE_BRANCH%" />
+            <param name="SONAR_TARGET_BRANCH" value="%SONAR_TARGET_BRANCH%" />
         </parameters>
         <build-runners>
             <runner name="Download sonar-automation JAR" type="DownloadSonarAutomationJAR"/>
@@ -32,7 +34,8 @@
   --component-version "%COMPONENT_VERSION%" \
   --sonar-project-key "%SONAR_PROJECT_KEY%" \
   --sonar-project-name "%SONAR_PROJECT_NAME%" \
-  --sonar-source-branch "%SONAR_SOURCE_BRANCH%"
+  --sonar-source-branch "%SONAR_SOURCE_BRANCH%" \
+  --sonar-target-branch "%SONAR_TARGET_BRANCH%"
 ]]></param>
                     <param name="teamcity.step.mode" value="default"/>
                     <param name="use.custom.script" value="true"/>

@@ -10,6 +10,15 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 
 /**
+ * Thrown when a TeamCity REST API request fails.
+ */
+class TeamcityApiException(
+    val path: String,
+    val statusCode: Int,
+    val responseBody: String,
+) : RuntimeException("TeamCity REST request failed for '$path': HTTP $statusCode — $responseBody")
+
+/**
  * Lightweight HTTP client for the TeamCity REST API.
  * TODO: To be replaced with octopus-external-system-clients
  */
@@ -43,9 +52,7 @@ class TeamcityRestClient(
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
 
         if (response.statusCode() != 200) {
-            throw RuntimeException(
-                "TeamCity REST request failed for '$path': HTTP ${response.statusCode()} — ${response.body()}"
-            )
+            throw TeamcityApiException(path, response.statusCode(), response.body())
         }
 
         return objectMapper.readValue(response.body())

@@ -57,10 +57,6 @@ java {
     withJavadocJar()
 }
 
-tasks.named("build") {
-    dependsOn(tasks.shadowJar)
-}
-
 tasks.register<Zip>("zipMetarunners") {
     archiveFileName = "metarunners.zip"
     from(layout.projectDirectory.dir("metarunners")) {
@@ -88,6 +84,11 @@ val metarunners = artifacts.add(
     classifier = "metarunners"
     type = "zip"
     builtBy("zipMetarunners")
+}
+
+tasks.named("build") {
+    dependsOn(tasks.named("zipMetarunners"))
+    dependsOn(tasks.shadowJar)
 }
 
 nexusPublishing {

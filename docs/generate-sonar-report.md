@@ -95,7 +95,7 @@ The report includes:
 
 The report is written to the working directory as:
 
-```
+```text
 <component-name>-<component-version>-sast-report.html
 ```
 
