@@ -386,7 +386,7 @@
     margin-bottom: 2px;
   }
 
-  /* ── issue cards ── */
+  /* ── issue cardss ── */
   .issue-card {
     background: var(--bg2);
     border: 1px solid var(--border);
@@ -589,7 +589,7 @@
   .prob-pill-low    { background: rgba(106,176,245,0.12);border: 1px solid rgba(106,176,245,0.25);color: var(--low); }
   .prob-pill-dot    { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
-  /* ── prob-badge (badge-col on hotspot cards) ── */
+  /* ── prob-badge (badge-col on hotspot cardss) ── */
   .prob-badge {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 7px; border-radius: 4px;
@@ -795,13 +795,13 @@
   const STATIC_COUNTS = {};
 
   function applyFilters() {
-    const cards = document.querySelectorAll('.issue-card');
+    const cardss = document.querySelectorAll('.issue-card');
     const groups = document.querySelectorAll('.severity-group');
     let totalVisible = 0;
     const groupVisible = {};
     const severityCount = {};
 
-    cards.forEach(card => {
+    cardss.forEach(card => {
       const sev           = card.dataset.severity;
       const type          = card.dataset.type;
       const prob          = (card.dataset.probability || '').toUpperCase();
