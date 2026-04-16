@@ -32,7 +32,7 @@ class ReportGeneratorCommand : CliktCommand(
     private val sonarSourceBranch by option(SONAR_SOURCE_BRANCH_OPTION, help = "Sonar source branch")
         .required().check("$SONAR_SOURCE_BRANCH_OPTION is empty") { it.isNotEmpty() }
     private val sonarTargetBranch by option(SONAR_TARGET_BRANCH_OPTION, help = "Sonar target branch")
-        .check("$SONAR_TARGET_BRANCH_OPTION is empty") { it.isNotEmpty() }
+        .required().check("$SONAR_TARGET_BRANCH_OPTION is empty") { it.isNotEmpty() }
 
     override fun run() {
         val sonarClient = ClassicSonarClient(
@@ -48,11 +48,11 @@ class ReportGeneratorCommand : CliktCommand(
         val qualityGateChecker = QualityGateChecker(sonarClient)
         val checkResult = qualityGateChecker.check(sonarProjectKey, sonarSourceBranch)
 
-        val notifier = TeamCityNotifier(sonarUrl, sonarProjectKey, sonarSourceBranch)
+        val notifier = TeamCityNotifier(sonarUrl, sonarProjectKey, sonarSourceBranch, sonarTargetBranch)
         notifier.buildMessages(checkResult).forEach { echo(it) }
 
         if (sonarSourceBranch != sonarTargetBranch) {
-            echo("Skipping report generation")
+            echo("Skipping report generation for non production branch $sonarSourceBranch")
             return
         }
 

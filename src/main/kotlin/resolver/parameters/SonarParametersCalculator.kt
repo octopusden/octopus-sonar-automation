@@ -81,6 +81,8 @@ class SonarParametersCalculator(
         )
     }
 
+
+    // TODO: need to highlight source branch = pull-request/key or actual branch
     private fun resolveBranchContext(
         resolvedVcs: ResolvedVCSDTO,
         buildMode: BuildMode,
@@ -88,11 +90,7 @@ class SonarParametersCalculator(
     ): BranchContext {
         if (sastOverride != null) {
             return BranchContext(
-                sourceBranch = if (buildMode == BuildMode.PULL_REQUEST) {
-                    TC_PULL_REQUEST_SOURCE_BRANCH_PARAM
-                } else {
-                    resolvedVcs.commit.branch
-                },
+                sourceBranch = resolvedVcs.commit.branch,
                 targetBranch = "",
                 sonarExtraParameters = ""
             )
@@ -100,7 +98,7 @@ class SonarParametersCalculator(
 
         if (buildMode == BuildMode.PULL_REQUEST) {
             return BranchContext(
-                sourceBranch = TC_PULL_REQUEST_SOURCE_BRANCH_PARAM,
+                sourceBranch = resolvedVcs.commit.branch,
                 targetBranch = TC_PULL_REQUEST_TARGET_BRANCH_PARAM,
                 sonarExtraParameters = SonarParameterBuilder.forPullRequest(
                     TC_PULL_REQUEST_NUMBER_PARAM,

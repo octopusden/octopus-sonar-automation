@@ -13,7 +13,8 @@ import org.octopusden.octopus.sonar.dto.QualityGateCheckResult
 class TeamCityNotifier(
     private val sonarServerUrl: String,
     private val projectKey: String,
-    private val branch: String,
+    private val sourceBranch: String,
+    private val targetBranch: String,
 ) {
     /**
      * Produces a list of TeamCity service messages based on the quality gate check result.
@@ -25,7 +26,7 @@ class TeamCityNotifier(
         val messages = mutableListOf<String>()
 
         val baseUrl = sonarServerUrl.trimEnd('/')
-        val branchParam = branchOrPrParam(branch)
+        val branchParam = branchOrPrParam(sourceBranch)
         val dashboardLink = "$baseUrl/dashboard?id=$projectKey&$branchParam"
         val newIssuesLink = "$baseUrl/project/issues?inNewCodePeriod=true&id=$projectKey&$branchParam"
 
@@ -36,10 +37,10 @@ class TeamCityNotifier(
             return messages
         }
 
-        val isMaster = branch == "master"
+        val isProductionBranch = sourceBranch == targetBranch
 
         if (result.hasNewIssues) {
-            if (isMaster && result.hasFailedMetrics) {
+            if (isProductionBranch && result.hasFailedMetrics) {
                 val metrics = result.failedMetrics.joinToString(", ")
                 messages.add(
                     "##teamcity[buildStatus text='Warning: ${result.newIssueCount} new SAST issues found and $metrics rating(s) below target - details: $dashboardLink']"
@@ -50,7 +51,7 @@ class TeamCityNotifier(
                 )
             }
         } else {
-            if (isMaster && result.hasFailedMetrics) {
+            if (isProductionBranch && result.hasFailedMetrics) {
                 val metrics = result.failedMetrics.joinToString(", ")
                 messages.add(
                     "##teamcity[buildStatus text='Warning: SAST $metrics rating(s) below target - details: ${dashboardLink}&codeScope=overall']"
