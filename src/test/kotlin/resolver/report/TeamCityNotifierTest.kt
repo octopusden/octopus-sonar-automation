@@ -8,17 +8,29 @@ import kotlin.test.assertTrue
 
 class TeamCityNotifierTest {
 
-    private val notifier = TeamCityNotifier(
+    // sourceBranch == targetBranch → production branch
+    private val productionNotifier = TeamCityNotifier(
         sonarServerUrl = "https://sonar.example.com",
         projectKey = "proj",
-        branch = "master",
+        sourceBranch = "master",
+        targetBranch = "master",
     )
+
+    // sourceBranch != targetBranch → feature branch
+    private val featureNotifier = TeamCityNotifier(
+        sonarServerUrl = "https://sonar.example.com",
+        projectKey = "proj",
+        sourceBranch = "feature/abc",
+        targetBranch = "master",
+    )
+
+    // ── Quality gate failed ──────────────────────────────────────────────────
 
     @Test
     fun `quality gate failed emits buildProblem`() {
         val result = QualityGateCheckResult("ERROR", newIssueCount = 3, failedMetrics = emptyList())
 
-        val messages = notifier.buildMessages(result)
+        val messages = productionNotifier.buildMessages(result)
 
         assertEquals(1, messages.size)
         assertTrue(messages[0].contains("##teamcity[buildProblem"))
@@ -27,10 +39,22 @@ class TeamCityNotifierTest {
     }
 
     @Test
-    fun `quality gate passed with new issues on master and failed metrics`() {
+    fun `quality gate failed returns only buildProblem even with new issues and failed metrics`() {
+        val result = QualityGateCheckResult("ERROR", newIssueCount = 10, failedMetrics = listOf("security"))
+
+        val messages = productionNotifier.buildMessages(result)
+
+        assertEquals(1, messages.size)
+        assertTrue(messages[0].contains("##teamcity[buildProblem"))
+    }
+
+    // ── Production branch (sourceBranch == targetBranch) ─────────────────────
+
+    @Test
+    fun `quality gate passed with new issues on production branch and failed metrics`() {
         val result = QualityGateCheckResult("OK", newIssueCount = 5, failedMetrics = listOf("security", "reliability"))
 
-        val messages = notifier.buildMessages(result)
+        val messages = productionNotifier.buildMessages(result)
 
         assertEquals(1, messages.size)
         assertTrue(messages[0].contains("##teamcity[buildStatus"))
@@ -40,10 +64,10 @@ class TeamCityNotifierTest {
     }
 
     @Test
-    fun `quality gate passed with new issues on master without failed metrics`() {
+    fun `quality gate passed with new issues on production branch without failed metrics`() {
         val result = QualityGateCheckResult("OK", newIssueCount = 3, failedMetrics = emptyList())
 
-        val messages = notifier.buildMessages(result)
+        val messages = productionNotifier.buildMessages(result)
 
         assertEquals(1, messages.size)
         assertTrue(messages[0].contains("3 new SAST issues found"))
@@ -51,23 +75,10 @@ class TeamCityNotifierTest {
     }
 
     @Test
-    fun `quality gate passed with new issues on feature branch`() {
-        val featureNotifier = TeamCityNotifier("https://sonar.example.com", "proj", "feature/abc")
-        val result = QualityGateCheckResult("OK", newIssueCount = 2, failedMetrics = listOf("security"))
-
-        val messages = featureNotifier.buildMessages(result)
-
-        assertEquals(1, messages.size)
-        assertTrue(messages[0].contains("2 new SAST issues found"))
-        // Non-master: no mention of failed metrics, links to new issues
-        assertTrue(messages[0].contains("project/issues?inNewCodePeriod=true"))
-    }
-
-    @Test
-    fun `quality gate passed no new issues but failed metrics on master`() {
+    fun `quality gate passed no new issues but failed metrics on production branch`() {
         val result = QualityGateCheckResult("OK", newIssueCount = 0, failedMetrics = listOf("maintainability"))
 
-        val messages = notifier.buildMessages(result)
+        val messages = productionNotifier.buildMessages(result)
 
         assertEquals(1, messages.size)
         assertTrue(messages[0].contains("SAST maintainability rating(s) below target"))
@@ -78,14 +89,28 @@ class TeamCityNotifierTest {
     fun `quality gate passed no new issues no failed metrics emits nothing`() {
         val result = QualityGateCheckResult("OK", newIssueCount = 0, failedMetrics = emptyList())
 
-        val messages = notifier.buildMessages(result)
+        val messages = productionNotifier.buildMessages(result)
 
         assertTrue(messages.isEmpty())
     }
 
+    // ── Feature branch (sourceBranch != targetBranch) ────────────────────────
+
     @Test
-    fun `quality gate passed no issues but failed metrics on non-master emits nothing`() {
-        val featureNotifier = TeamCityNotifier("https://sonar.example.com", "proj", "feature/xyz")
+    fun `quality gate passed with new issues on feature branch`() {
+        val result = QualityGateCheckResult("OK", newIssueCount = 2, failedMetrics = listOf("security"))
+
+        val messages = featureNotifier.buildMessages(result)
+
+        assertEquals(1, messages.size)
+        assertTrue(messages[0].contains("2 new SAST issues found"))
+        // Non-production: no mention of failed metrics, links to new issues
+        assertTrue(messages[0].contains("project/issues?inNewCodePeriod=true"))
+        assertFalse(messages[0].contains("rating(s) below target"))
+    }
+
+    @Test
+    fun `quality gate passed no issues but failed metrics on feature branch emits nothing`() {
         val result = QualityGateCheckResult("OK", newIssueCount = 0, failedMetrics = listOf("security"))
 
         val messages = featureNotifier.buildMessages(result)
@@ -94,8 +119,21 @@ class TeamCityNotifierTest {
     }
 
     @Test
+    fun `quality gate passed with new issues but no failed metrics on feature branch`() {
+        val result = QualityGateCheckResult("OK", newIssueCount = 7, failedMetrics = emptyList())
+
+        val messages = featureNotifier.buildMessages(result)
+
+        assertEquals(1, messages.size)
+        assertTrue(messages[0].contains("7 new SAST issues found"))
+        assertTrue(messages[0].contains("project/issues?inNewCodePeriod=true"))
+    }
+
+    // ── Pull request branches ────────────────────────────────────────────────
+
+    @Test
     fun `pull-request branch uses pullRequest param in links`() {
-        val prNotifier = TeamCityNotifier("https://sonar.example.com", "proj", "pull-request/42")
+        val prNotifier = TeamCityNotifier("https://sonar.example.com", "proj", "pull-requests/42", "master")
         val result = QualityGateCheckResult("OK", newIssueCount = 3, failedMetrics = emptyList())
 
         val messages = prNotifier.buildMessages(result)
@@ -107,7 +145,7 @@ class TeamCityNotifierTest {
 
     @Test
     fun `pull-request quality gate failure uses pullRequest param`() {
-        val prNotifier = TeamCityNotifier("https://sonar.example.com", "proj", "pull-request/99")
+        val prNotifier = TeamCityNotifier("https://sonar.example.com", "proj", "pull-requests/99", "master")
         val result = QualityGateCheckResult("ERROR", newIssueCount = 0, failedMetrics = emptyList())
 
         val messages = prNotifier.buildMessages(result)
@@ -115,5 +153,34 @@ class TeamCityNotifierTest {
         assertEquals(1, messages.size)
         assertTrue(messages[0].contains("pullRequest=99"))
     }
-}
 
+    // ── branchOrPrParam companion function ───────────────────────────────────
+
+    @Test
+    fun `branchOrPrParam returns branch param for regular branch`() {
+        assertEquals("branch=main", TeamCityNotifier.branchOrPrParam("main"))
+    }
+
+    @Test
+    fun `branchOrPrParam returns branch param for feature branch`() {
+        assertEquals("branch=feature/xyz", TeamCityNotifier.branchOrPrParam("feature/xyz"))
+    }
+
+    @Test
+    fun `branchOrPrParam returns pullRequest param for pull-requests branch`() {
+        assertEquals("pullRequest=42", TeamCityNotifier.branchOrPrParam("pull-requests/42"))
+    }
+
+    // ── trailing slash on server URL ─────────────────────────────────────────
+
+    @Test
+    fun `trailing slash on sonar server URL is trimmed`() {
+        val notifier = TeamCityNotifier("https://sonar.example.com/", "proj", "master", "master")
+        val result = QualityGateCheckResult("ERROR", newIssueCount = 0, failedMetrics = emptyList())
+
+        val messages = notifier.buildMessages(result)
+
+        assertTrue(messages[0].contains("https://sonar.example.com/dashboard"))
+        assertFalse(messages[0].contains("https://sonar.example.com//dashboard"))
+    }
+}

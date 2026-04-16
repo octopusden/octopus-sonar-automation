@@ -9,7 +9,7 @@ import org.octopusden.octopus.sonar.client.dto.QualityGateResponseDTO
  * Clean interface for interacting with the SonarQube API.
  *
  * All methods accept a [branch] parameter which can be either a branch name
- * (e.g. `"master"`) or a pull-request reference (e.g. `"pull-request/123"`).
+ * (e.g. `"master"`) or a pull-request reference (e.g. `"pull-requests/123"`).
  * The implementation transparently translates this into the correct
  * `&branch=` or `&pullRequest=` query parameter.
  */

@@ -81,8 +81,6 @@ class SonarParametersCalculator(
         )
     }
 
-
-    // TODO: need to highlight source branch = pull-request/key or actual branch
     private fun resolveBranchContext(
         resolvedVcs: ResolvedVCSDTO,
         buildMode: BuildMode,

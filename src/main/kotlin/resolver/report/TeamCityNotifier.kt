@@ -65,11 +65,11 @@ class TeamCityNotifier(
     companion object {
         /**
          * Translates a branch identifier into the correct URL query parameter.
-         * `"pull-request/123"` → `"pullRequest=123"`, otherwise `"branch=<name>"`.
+         * `"pull-requests/123"` → `"pullRequest=123"`, otherwise `"branch=<name>"`.
          */
         fun branchOrPrParam(branch: String): String {
-            return if (branch.contains("pull-request")) {
-                "pullRequest=${branch.substringAfter("pull-request/")}"
+            return if (branch.contains("pull-requests")) {
+                "pullRequest=${branch.substringAfter("pull-requests/")}"
             } else {
                 "branch=$branch"
             }

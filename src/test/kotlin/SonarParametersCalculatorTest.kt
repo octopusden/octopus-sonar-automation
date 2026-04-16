@@ -100,7 +100,7 @@ class SonarParametersCalculatorTest {
 
         val result = calculator.calculate()
 
-        assertEquals("%teamcity.pullRequest.source.branch%", result.sonarSourceBranch)
+        assertEquals("pull-requests/123", result.sonarSourceBranch)
         assertEquals("%teamcity.pullRequest.target.branch%", result.sonarTargetBranch)
         assertEquals(
             SonarParameterBuilder.forPullRequest(
@@ -130,7 +130,7 @@ class SonarParametersCalculatorTest {
 
         assertEquals("OVERRIDE_KEY", result.sonarProjectKey)
         assertEquals("OVERRIDE/NAME", result.sonarProjectName)
-        assertEquals("%teamcity.pullRequest.source.branch%", result.sonarSourceBranch)
+        assertEquals("pull-requests/456", result.sonarSourceBranch)
         assertEquals("", result.sonarTargetBranch)
         assertEquals("", result.sonarExtraParameters)
 

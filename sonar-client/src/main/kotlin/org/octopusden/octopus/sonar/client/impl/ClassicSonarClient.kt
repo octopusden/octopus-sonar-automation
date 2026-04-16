@@ -110,7 +110,7 @@ class ClassicSonarClient(
      */
     private fun branchParams(branch: String): Map<String, Any> {
         return if (branch.contains("pull-request")) {
-            mapOf("pullRequest" to branch.substringAfter("pull-request/"))
+            mapOf("pullRequest" to branch.substringAfter("pull-requests/"))
         } else {
             mapOf("branch" to branch)
         }
