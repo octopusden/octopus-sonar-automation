@@ -118,7 +118,7 @@ class SonarParametersCalculator(
     }
 
     private fun resolveBuildMode(sourceBranch: String): BuildMode {
-        return if (sourceBranch.contains(PULL_REQUEST_BRANCH_MARKER)) {
+        return if (sourceBranch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
             BuildMode.PULL_REQUEST
         } else {
             BuildMode.REGULAR_BRANCH

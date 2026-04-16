@@ -47,6 +47,7 @@ class ReportHtmlRenderer {
         context.put("componentVersion", data.componentVersion)
         context.put("repository", data.repository)
         context.put("effortTotal", data.effortTotal)
+        context.put("sourceBranch", data.sourceBranch)
 
         // Quality gate
         val (cssClass, label) = qualityGateDisplay(data.qualityGateStatus)
@@ -126,21 +127,30 @@ class ReportHtmlRenderer {
         fun ruleUrl(ruleKey: String): String {
             val baseUrl = data.sonarServerUrl.trimEnd('/')
             val encoded = enc(ruleKey)
-            return "$baseUrl/coding_rules?rule_key=$encoded&open=$encoded"
+            return "$baseUrl/coding_rules?rule_key=$encoded&open=$encoded&${branchParam()}"
         }
 
         fun issueUrl(issue: ReportIssueItem): String {
             val baseUrl = data.sonarServerUrl.trimEnd('/')
             val projectKey = enc(data.sonarProjectKey)
             val issueKey = enc(issue.key)
-            return "$baseUrl/project/issues?id=$projectKey&issues=$issueKey&open=$issueKey"
+            return "$baseUrl/project/issues?id=$projectKey&issues=$issueKey&open=$issueKey&${branchParam()}"
         }
 
         fun hotspotUrl(hotspot: ReportHotspotItem): String {
             val baseUrl = data.sonarServerUrl.trimEnd('/')
             val projectKey = enc(data.sonarProjectKey)
             val hotspotKey = enc(hotspot.key)
-            return "$baseUrl/security_hotspots?id=$projectKey&hotspots=$hotspotKey"
+            return "$baseUrl/security_hotspots?id=$projectKey&hotspots=$hotspotKey&${branchParam()}"
+        }
+
+        private fun branchParam(): String {
+            val branch = data.sourceBranch
+            return if (branch.startsWith("pull-requests/")) {
+                "pullRequest=${enc(branch.removePrefix("pull-requests/"))}"
+            } else {
+                "branch=${enc(branch)}"
+            }
         }
 
         private fun enc(value: String): String = URLEncoder.encode(value, Charsets.UTF_8)

@@ -35,13 +35,13 @@ class ReportDataMapper {
     }
 
     private fun mapIssue(issue: IssueDTO): ReportIssueItem {
-        val impact = issue.impacts.firstOrNull()
+        val impact = issue.impacts.first()
         return ReportIssueItem(
-            severity = impact?.severity ?: issue.severity,
+            severity = impact.severity,
             message = issue.message,
             rule = issue.rule,
             type = issue.type,
-            softwareQuality = impact?.softwareQuality ?: "",
+            softwareQuality = impact.softwareQuality,
             fileName = extractFileName(issue.component),
             line = issue.line,
             effort = formatEffort(issue.effort),

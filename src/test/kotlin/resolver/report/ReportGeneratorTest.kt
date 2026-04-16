@@ -127,9 +127,6 @@ class ReportGeneratorTest {
     fun `generates report with issues and hotspots`() {
         val issues = listOf(sampleIssue())
         every { sonarClient.searchIssues(any(), any(), any(), 500, 1) } returns issueResponse(issues, effortTotal = 15)
-        every { sonarClient.searchIssues(any(), any(), any(), 1, 1) } returns IssuesResponseDTO(
-            paging = PagingDTO(1, 1, 1), effortTotal = 15, issues = listOf(sampleIssue())
-        )
         every { sonarClient.searchHotspots(any(), any(), any(), any(), any()) } returns hotspotResponse(listOf(sampleHotspot()))
         every { sonarClient.getQualityGateStatus(any(), any()) } returns qualityGateResponse("OK")
 
@@ -198,9 +195,6 @@ class ReportGeneratorTest {
             paging = PagingDTO(pageIndex = 2, pageSize = 500, total = 600),
             effortTotal = 100,
             issues = page2Issues,
-        )
-        every { sonarClient.searchIssues(any(), any(), any(), 1, 1) } returns IssuesResponseDTO(
-            paging = PagingDTO(1, 1, 600), effortTotal = 100, issues = listOf(sampleIssue())
         )
         every { sonarClient.searchHotspots(any(), any(), any(), any(), any()) } returns hotspotResponse()
         every { sonarClient.getQualityGateStatus(any(), any()) } returns qualityGateResponse("OK")

@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
 import org.octopusden.octopus.sonar.resolver.parameters.SonarParametersCalculator
+import org.octopusden.octopus.sonar.util.TeamCityEscaper
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
 import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClientUrlProvider
@@ -77,16 +78,8 @@ class CalculateSonarParametersCommand : CliktCommand(
        setTeamcityParameter(SKIP_SONAR_REPORT_GENERATION_PARAMETER, params.skipSonarReportGeneration.toString())
     }
 
-    private fun escapeTcValue(value: String): String = value
-        .replace("|", "||")
-        .replace("'", "|'")
-        .replace("\n", "|n")
-        .replace("\r", "|r")
-        .replace("[", "|[")
-        .replace("]", "|]")
-
     private fun setTeamcityParameter(name: String, value: String) {
-        echo("##teamcity[setParameter name='$name' value='${escapeTcValue(value)}']")
+        echo("##teamcity[setParameter name='$name' value='${TeamCityEscaper.escape(value)}']")
     }
     companion object {
         const val TEAMCITY_URL_OPTION = "--teamcity-url"

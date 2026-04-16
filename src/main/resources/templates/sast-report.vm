@@ -612,7 +612,7 @@
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <div class="header-label">SAST Report — Overall Code on Master</div>
+    <div class="header-label">SAST Report — Overall Code on $esc.html($sourceBranch)</div>
     <div class="header-title">$esc.html($componentName):$esc.html($componentVersion)</div>
     <div class="header-meta">
       <div class="meta-item">Repository <span>$esc.html($repository)</span></div>

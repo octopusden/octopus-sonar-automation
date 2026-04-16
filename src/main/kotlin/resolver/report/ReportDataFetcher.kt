@@ -20,39 +20,43 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         val qualityGateStatus: String,
     )
 
+    private data class IssuesFetchResult(
+        val issues: List<IssueDTO>,
+        val effortTotal: Int,
+    )
+
     fun fetch(projectKey: String, branch: String): FetchedData {
-        val issues = fetchAllIssues(projectKey, branch)
+        val issuesResult = fetchAllIssues(projectKey, branch)
         val hotspots = fetchAllHotspots(projectKey, branch)
         val qualityGateStatus = sonarClient.getQualityGateStatus(branch, projectKey).projectStatus.status
 
-        val effortTotal = if (issues.isNotEmpty()) {
-            sonarClient.searchIssues(projectKey, branch, resolved = false, ps = 1, p = 1).effortTotal ?: 0
-        } else {
-            0
-        }
-
         return FetchedData(
-            effortTotal = effortTotal,
-            issues = issues,
+            effortTotal = issuesResult.effortTotal,
+            issues = issuesResult.issues,
             hotspots = hotspots,
             qualityGateStatus = qualityGateStatus,
         )
     }
 
-    private fun fetchAllIssues(projectKey: String, branch: String): List<IssueDTO> {
+    private fun fetchAllIssues(projectKey: String, branch: String): IssuesFetchResult {
         val allIssues = mutableListOf<IssueDTO>()
         var page = 1
+        var effortTotal = 0
 
         while (true) {
             val response = sonarClient.searchIssues(projectKey, branch, resolved = false, ps = PAGE_SIZE, p = page)
             allIssues.addAll(response.issues)
+
+            if (page == 1) {
+                effortTotal = response.effortTotal ?: 0
+            }
 
             val paging = response.paging
             if (paging.pageIndex * paging.pageSize >= paging.total) break
             page++
         }
 
-        return allIssues
+        return IssuesFetchResult(issues = allIssues, effortTotal = effortTotal)
     }
 
     private fun fetchAllHotspots(projectKey: String, branch: String): List<HotspotDTO> {
@@ -71,4 +75,3 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         return allHotspots
     }
 }
-
