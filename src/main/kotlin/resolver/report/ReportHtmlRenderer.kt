@@ -8,6 +8,7 @@ import org.apache.velocity.app.VelocityEngine
 import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.tools.generic.EscapeTool
 import java.io.StringWriter
+import java.net.URLEncoder
 
 /**
  * Renders the SAST report HTML from [ReportData] using Apache Velocity templates.
@@ -124,17 +125,24 @@ class ReportHtmlRenderer {
 
         fun ruleUrl(ruleKey: String): String {
             val baseUrl = data.sonarServerUrl.trimEnd('/')
-            return "$baseUrl/coding_rules?rule_key=$ruleKey&open=$ruleKey"
+            val encoded = enc(ruleKey)
+            return "$baseUrl/coding_rules?rule_key=$encoded&open=$encoded"
         }
 
         fun issueUrl(issue: ReportIssueItem): String {
             val baseUrl = data.sonarServerUrl.trimEnd('/')
-            return "$baseUrl/project/issues?id=${data.sonarProjectKey}&issues=${issue.key}&open=${issue.key}"
+            val projectKey = enc(data.sonarProjectKey)
+            val issueKey = enc(issue.key)
+            return "$baseUrl/project/issues?id=$projectKey&issues=$issueKey&open=$issueKey"
         }
 
         fun hotspotUrl(hotspot: ReportHotspotItem): String {
             val baseUrl = data.sonarServerUrl.trimEnd('/')
-            return "$baseUrl/security_hotspots?id=${data.sonarProjectKey}&hotspots=${hotspot.key}"
+            val projectKey = enc(data.sonarProjectKey)
+            val hotspotKey = enc(hotspot.key)
+            return "$baseUrl/security_hotspots?id=$projectKey&hotspots=$hotspotKey"
         }
+
+        private fun enc(value: String): String = URLEncoder.encode(value, Charsets.UTF_8)
     }
 }

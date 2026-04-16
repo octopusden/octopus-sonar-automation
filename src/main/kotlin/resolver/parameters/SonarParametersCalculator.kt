@@ -107,7 +107,8 @@ class SonarParametersCalculator(
         }
 
         val sourceBranch = resolvedVcs.commit.branch
-        val targetBranch = targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches)
+        val candidates = resolvedVcs.defaultBranches.ifEmpty { DEFAULT_BRANCH_CANDIDATES }
+        val targetBranch = targetBranchResolver.findTargetBranch(resolvedVcs.commit, candidates)
 
         return BranchContext(
             sourceBranch = sourceBranch,
@@ -145,5 +146,6 @@ class SonarParametersCalculator(
         private const val TC_PULL_REQUEST_NUMBER_PARAM = "%teamcity.pullRequest.number%"
         private const val TC_PULL_REQUEST_SOURCE_BRANCH_PARAM = "%teamcity.pullRequest.source.branch%"
         private const val TC_PULL_REQUEST_TARGET_BRANCH_PARAM = "%teamcity.pullRequest.target.branch%"
+        private val DEFAULT_BRANCH_CANDIDATES = listOf("main", "master")
     }
 }

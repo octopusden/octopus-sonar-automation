@@ -620,9 +620,9 @@
   </div>
   <div class="header-right">
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" id="theme-btn">☀️</button>
-    <div class="badge-gate $qualityGateCssClass">
+    <div class="badge-gate $esc.html($qualityGateCssClass)">
       <div class="dot"></div>
-      $qualityGateLabel
+      $esc.html($qualityGateLabel)
     </div>
   </div>
 </div>

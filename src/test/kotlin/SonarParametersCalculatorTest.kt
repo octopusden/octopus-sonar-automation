@@ -204,4 +204,25 @@ class SonarParametersCalculatorTest {
         assertEquals(SonarServerParametersDTO.DEVELOPER.id, result.sonarServerId)
         assertEquals(SonarServerParametersDTO.DEVELOPER.url, result.sonarServerUrl)
     }
+
+    @Test
+    fun `empty defaultBranches falls back to default candidates`() {
+        val resolvedVcs = ResolvedVCSDTO(
+            commit = CommitStampDTO("abc123", "feature/xyz", "ssh://git@bitbucket.example.com/MYPROJ/my-repo.git"),
+            defaultBranches = emptyList(),
+            bbProjectKey = "MYPROJ",
+            bbRepositoryKey = "my-repo"
+        )
+        every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
+        every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, listOf("main", "master")) } returns "main"
+        every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
+        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
+
+        val result = calculator.calculate()
+
+        assertEquals("main", result.sonarTargetBranch)
+        verify { targetBranchResolver.findTargetBranch(resolvedVcs.commit, listOf("main", "master")) }
+    }
 }
