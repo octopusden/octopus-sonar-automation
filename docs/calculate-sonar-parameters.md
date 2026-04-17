@@ -82,14 +82,19 @@ Determined by the component's language labels from the Components Registry:
 
 ### Skip Sonar Metarunner Execution
 
-The new metarunner scan is executed **only** for:
-- Components **not** in `applied-sast.json`
-- Java/Kotlin components with JDK 1.8 (components using JDK 17/21 use gradle/maven plugin directly)
-- Non-Java/Kotlin components
+The metarunner scan is **skipped** when any of the following hold:
+- Component is in `applied-sast.json`
+- Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
+- Component is archived
+- Component is labelled `test-component`
+- Java/Kotlin component using JDK 17/21, or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
 
 ### Skip Sonar Report Generation
 
-Report generation is skipped for documentation, test, and archived components.
+Report generation is **skipped** when any of the following hold:
+- Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
+- Component is archived
+- Component is labelled `test-component`
 
 ---
 
