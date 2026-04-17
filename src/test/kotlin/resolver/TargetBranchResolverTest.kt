@@ -161,6 +161,113 @@ class TargetBranchResolverTest {
         assertEquals("main", result)
     }
 
+    // ── closer ancestor wins over candidate order ───────────────────────────
+
+    @Test
+    fun `closer common ancestor wins even when later in candidates list`() {
+        // feature branched from master recently (shared within 10d window)
+        // but also shares ancient history with main (only within 20d window)
+        val tenDays = fromDate(10)
+        val twentyDays = fromDate(20)
+
+        // 10-day window: source has f1 only
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "feature/x",
+                fromDate = tenDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("f1"), Fixtures.commit("recent-shared"))
+
+        // 10-day window: main has no overlap
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "main",
+                fromDate = tenDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("m1"))
+
+        // 10-day window: master has recent overlap
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "master",
+                fromDate = tenDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("recent-shared"))
+
+        // main is listed first, but master has the closer ancestor
+        val result = resolver.findTargetBranch(stamp("feature/x"), listOf("main", "master"))
+        assertEquals("master", result)
+    }
+
+    @Test
+    fun `candidate order does not beat closer common ancestor - regression`() {
+        // Scenario: candidates = [release/1.0, main]
+        // release/1.0 shares a commit only in the 20-day window (old overlap)
+        // main shares a commit already in the 10-day window (recent overlap)
+        // Old bug: candidate-first loop would find release/1.0 at 20d before ever checking main at 10d
+        val tenDays = fromDate(10)
+        val twentyDays = fromDate(20)
+
+        // source branch: 10d window has recent commits only
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "feature/regression",
+                fromDate = tenDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("s1"), Fixtures.commit("recent-base"))
+
+        // source branch: 20d window adds an old shared commit
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "feature/regression",
+                fromDate = twentyDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("s1"), Fixtures.commit("recent-base"), Fixtures.commit("old-base"))
+
+        // release/1.0: no overlap at 10d, overlap at 20d via "old-base"
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "release/1.0",
+                fromDate = tenDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("r1"))
+
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "release/1.0",
+                fromDate = twentyDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("r1"), Fixtures.commit("old-base"))
+
+        // main: overlap at 10d already via "recent-base"
+        every {
+            vcsFacadeClient.getCommits(
+                sshUrl = Fixtures.REPO_URL,
+                toHashOrRef = "main",
+                fromDate = tenDays,
+                fromHashOrRef = null,
+            )
+        } returns listOf(Fixtures.commit("recent-base"), Fixtures.commit("m1"))
+
+        // main is listed AFTER release/1.0, but has the closer ancestor → must win
+        val result = resolver.findTargetBranch(stamp("feature/regression"), listOf("release/1.0", "main"))
+        assertEquals("main", result)
+    }
+
     // ── guard conditions ──────────────────────────────────────────────────────
 
     @Test
@@ -211,17 +318,11 @@ class TargetBranchResolverTest {
             )
         } returns listOf(Fixtures.commit("m-new"), Fixtures.commit("shared"))
 
+        // master has no overlap at any window
+        stubCommits("master", listOf(Fixtures.commit("z1"), Fixtures.commit("z2")))
+
         val result = resolver.findTargetBranch(stamp("feature/slow-diverge"), listOf("main", "master"))
         assertEquals("main", result)
-
-        verify(exactly = 0) {
-            vcsFacadeClient.getCommits(
-                sshUrl = Fixtures.REPO_URL,
-                toHashOrRef = "master",
-                fromDate = any(),
-                fromHashOrRef = null,
-            )
-        }
     }
 
     // ── findTargetBranchBestEffort ──────────────────────────────────────────

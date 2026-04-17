@@ -47,31 +47,33 @@ class TargetBranchResolver(
 
         val windowDaysList = buildWindowDays()
         val sourceHashesByWindow = mutableMapOf<Int, List<String>>()
+        val skippedCandidates = mutableSetOf<String>()
 
-        candidateLoop@ for (candidate in candidates) {
-            logger.debug("Evaluating candidate '{}'", candidate)
-
-            for (windowDays in windowDaysList) {
-                val sourceBranchHashes = runCatching {
-                    sourceHashesByWindow.getOrPut(windowDays) {
-                        val fromDate = Date(nowProviderMillis() - windowDays * DAY_IN_MILLIS)
-                        logger.debug("Fetching source commits using last {} days window", windowDays)
-                        vcsFacadeClient.getCommits(
-                            commit.vcsUrl,
-                            fromDate = fromDate,
-                            toHashOrRef = commit.branch,
-                            fromHashOrRef = null,
-                        ).map { it.hash }
-                    }
-                }.getOrElse {
-                    logger.warn("Failed to fetch commits for source branch '{}': {}", commit.branch, it.message)
-                    return candidates.first()
+        for (windowDays in windowDaysList) {
+            val sourceBranchHashes = runCatching {
+                sourceHashesByWindow.getOrPut(windowDays) {
+                    val fromDate = Date(nowProviderMillis() - windowDays * DAY_IN_MILLIS)
+                    logger.debug("Fetching source commits using last {} days window", windowDays)
+                    vcsFacadeClient.getCommits(
+                        commit.vcsUrl,
+                        fromDate = fromDate,
+                        toHashOrRef = commit.branch,
+                        fromHashOrRef = null,
+                    ).map { it.hash }
                 }
+            }.getOrElse {
+                logger.warn("Failed to fetch commits for source branch '{}': {}", commit.branch, it.message)
+                return candidates.first()
+            }
 
-                if (sourceBranchHashes.isEmpty()) {
-                    logger.debug("No commits found on '{}' in the last {} days", commit.branch, windowDays)
-                    continue
-                }
+            if (sourceBranchHashes.isEmpty()) {
+                logger.debug("No commits found on '{}' in the last {} days", commit.branch, windowDays)
+                continue
+            }
+
+            for (candidate in candidates) {
+                if (candidate in skippedCandidates) continue
+                logger.debug("Evaluating candidate '{}' with {} days window", candidate, windowDays)
 
                 val fromDate = Date(nowProviderMillis() - windowDays * DAY_IN_MILLIS)
                 val candidateHashes = try {
@@ -83,10 +85,12 @@ class TargetBranchResolver(
                     ).asSequence().map { it.hash }.toHashSet()
                 } catch (_: NotFoundException) {
                     logger.warn("Candidate branch '{}' not found in VCS Facade - skipping", candidate)
-                    continue@candidateLoop
+                    skippedCandidates += candidate
+                    continue
                 } catch (e: Exception) {
                     logger.warn("Failed to fetch commits for candidate '{}': {}", candidate, e.message)
-                    continue@candidateLoop
+                    skippedCandidates += candidate
+                    continue
                 }
 
                 val commonHash = sourceBranchHashes.firstOrNull { it in candidateHashes }

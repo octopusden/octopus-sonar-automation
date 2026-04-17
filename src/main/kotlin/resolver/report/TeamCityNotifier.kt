@@ -2,6 +2,8 @@ package org.octopusden.octopus.sonar.resolver.report
 
 import org.octopusden.octopus.sonar.dto.QualityGateCheckResult
 import org.octopusden.octopus.sonar.util.TeamCityEscaper
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 /**
  * Translates a [QualityGateCheckResult] into TeamCity service messages.
@@ -28,8 +30,9 @@ class TeamCityNotifier(
 
         val baseUrl = sonarServerUrl.trimEnd('/')
         val branchParam = branchOrPrParam(sourceBranch)
-        val dashboardLink = "$baseUrl/dashboard?id=$projectKey&$branchParam"
-        val newIssuesLink = "$baseUrl/project/issues?inNewCodePeriod=true&id=$projectKey&$branchParam"
+        val encodedProjectKey = URLEncoder.encode(projectKey, StandardCharsets.UTF_8)
+        val dashboardLink = "$baseUrl/dashboard?id=$encodedProjectKey&$branchParam"
+        val newIssuesLink = "$baseUrl/project/issues?inNewCodePeriod=true&id=$encodedProjectKey&$branchParam"
 
         if (!result.isQualityGatePassed) {
             messages.add(

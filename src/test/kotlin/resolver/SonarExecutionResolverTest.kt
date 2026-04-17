@@ -78,18 +78,24 @@ class SonarExecutionResolverTest {
     // ── documentation components ───────────────────────────────────────────────
 
     @Test
-    fun `metarunner skipped for component name starting with doc (lowercase)`() {
+    fun `metarunner skipped for component name starting with doc-`() {
         assertTrue(resolver.skipSonarMetarunnerExecution("doc-component", "1.0"))
     }
 
     @Test
-    fun `metarunner skipped for component name starting with Doc (title-case)`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("DocSomething", "1.0"))
+    fun `metarunner skipped for component name starting with doc_`() {
+        assertTrue(resolver.skipSonarMetarunnerExecution("doc_component", "1.0"))
     }
 
     @Test
-    fun `metarunner skipped for component name starting with DOC (uppercase)`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("DOC-format", "1.0"))
+    fun `metarunner skipped for component name starting with DOC_ (case-insensitive)`() {
+        assertTrue(resolver.skipSonarMetarunnerExecution("DOC_format", "1.0"))
+    }
+
+    @Test
+    fun `metarunner not skipped for component name starting with doc but not doc- prefix`() {
+        every { crsClient.getDetailedComponent("docker-registry", "1.0") } returns Fixtures.detailedComponent()
+        assertFalse(resolver.skipSonarMetarunnerExecution("docker-registry", "1.0"))
     }
 
     @Test
@@ -181,8 +187,13 @@ class SonarExecutionResolverTest {
     // ── documentation components ───────────────────────────────────────────────
 
     @Test
-    fun `report generation skipped for component name starting with doc`() {
+    fun `report generation skipped for component name starting with doc-`() {
         assertTrue(resolver.skipSonarReportGeneration("doc-api"))
+    }
+
+    @Test
+    fun `report generation skipped for component name starting with doc_`() {
+        assertTrue(resolver.skipSonarReportGeneration("doc_api"))
     }
 
     @Test

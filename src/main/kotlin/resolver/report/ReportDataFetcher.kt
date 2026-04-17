@@ -11,6 +11,7 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
 
     companion object {
         private const val PAGE_SIZE = 500
+        private const val MAX_PAGES = 100
     }
 
     data class FetchedData(
@@ -63,7 +64,7 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         val allHotspots = mutableListOf<HotspotDTO>()
         var page = 1
 
-        while (true) {
+        while (page <= MAX_PAGES) {
             val response = sonarClient.searchHotspots(projectKey, branch, status = "TO_REVIEW", ps = PAGE_SIZE, p = page)
             allHotspots.addAll(response.hotspots)
 

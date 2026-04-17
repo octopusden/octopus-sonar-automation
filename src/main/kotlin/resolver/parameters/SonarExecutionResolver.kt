@@ -39,7 +39,7 @@ class SonarExecutionResolver(
      *
      * Sonar execution is skipped when any of the following conditions hold:
      * - Component is listed in `applied-sast.json` - already covered by a dedicated SAST pipeline
-     * - Component name starts with `doc` (case-insensitive) or is listed in `other-doc-components.txt`
+     * - Component name starts with `doc-` or `doc_` (case-insensitive) or is listed in `other-doc-components.txt`
      * - Component is archived
      * - Component is labelled `test-component`
      * - Component uses Java or Kotlin **and** either its `javaVersion` build parameter is `17` or `21`,
@@ -52,7 +52,7 @@ class SonarExecutionResolver(
             return true
         }
 
-        if (componentName in otherDocComponents || componentName.startsWith("doc", ignoreCase = true)) {
+        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
             logger.info("$componentName is a documentation component - skipping")
             return true
         }
@@ -85,12 +85,12 @@ class SonarExecutionResolver(
      * Returns `true` when Sonar report generation should be **skipped** for this component.
      *
      * Report generation is skipped when any of the following conditions hold:
-     * - Component name starts with `doc` (case-insensitive) or is listed in `other-doc-components.txt`
+     * - Component name starts with `doc-` or `doc_` (case-insensitive) or is listed in `other-doc-components.txt`
      * - Component is archived
      * - Component is labelled `test-component`
      */
     fun skipSonarReportGeneration(componentName: String): Boolean {
-        if (componentName in otherDocComponents || componentName.startsWith("doc", ignoreCase = true)) {
+        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
             logger.info("$componentName is a documentation component - skipping")
             return true
         }
@@ -146,3 +146,7 @@ class SonarExecutionResolver(
     }
 
 }
+
+private fun String.isDocPrefix(): Boolean =
+    startsWith("doc-", ignoreCase = true) || startsWith("doc_", ignoreCase = true)
+

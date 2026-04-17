@@ -35,13 +35,13 @@ class ReportDataMapper {
     }
 
     private fun mapIssue(issue: IssueDTO): ReportIssueItem {
-        val impact = issue.impacts.first()
+        val impact = issue.impacts.firstOrNull()
         return ReportIssueItem(
-            severity = impact.severity,
+            severity = impact?.severity ?: mapLegacySeverity(issue.severity),
             message = issue.message,
             rule = issue.rule,
             type = issue.type,
-            softwareQuality = impact.softwareQuality,
+            softwareQuality = impact?.softwareQuality.orEmpty(),
             fileName = extractFileName(issue.component),
             line = issue.line,
             effort = formatEffort(issue.effort),
@@ -64,6 +64,23 @@ class ReportDataMapper {
     }
 
     companion object {
+        /**
+         * Maps legacy SonarQube severity values to impact severity values.
+         * Legacy: BLOCKER, CRITICAL, MAJOR, MINOR, INFO
+         * Impact: BLOCKER, HIGH, MEDIUM, LOW, INFO
+         */
+        private val LEGACY_SEVERITY_MAP = mapOf(
+            "BLOCKER" to "BLOCKER",
+            "CRITICAL" to "HIGH",
+            "MAJOR" to "MEDIUM",
+            "MINOR" to "LOW",
+            "INFO" to "INFO",
+        )
+
+        fun mapLegacySeverity(severity: String): String {
+            return LEGACY_SEVERITY_MAP[severity.uppercase()] ?: severity
+        }
+
         /**
          * Extracts the repository part from the SONAR_PROJECT_NAME.
          * Format: "PROJECT/repo:(component)" → "PROJECT/repo"

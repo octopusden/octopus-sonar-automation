@@ -56,7 +56,7 @@ class ReportHtmlRenderer {
 
         if (hasIssues) {
             // Summary counts
-            val severityCounts = data.issues.groupBy { it.severity.uppercase() }.mapValues { it.value.size }
+            val severityCounts = data.issues.groupBy { normalizeSeverity(it.severity) }.mapValues { it.value.size }
             context.put("totalIssueCount", data.issues.size + data.hotspots.size)
             context.put("blockerCount", severityCounts["BLOCKER"] ?: 0)
             context.put("highCount", severityCounts["HIGH"] ?: 0)
@@ -66,7 +66,7 @@ class ReportHtmlRenderer {
             context.put("hotspotCount", data.hotspots.size)
 
             // Issue groups (only groups that have issues)
-            val issuesByGroup = data.issues.groupBy { it.severity.uppercase() }
+            val issuesByGroup = data.issues.groupBy { normalizeSeverity(it.severity) }
             val severityGroups = SEVERITY_ORDER
                 .filter { issuesByGroup.containsKey(it) }
                 .map { sev ->
@@ -86,6 +86,13 @@ class ReportHtmlRenderer {
         val template = engine.getTemplate(templatePath, "UTF-8")
         template.merge(context, writer)
         return writer.toString()
+    }
+
+    private fun normalizeSeverity(raw: String): String = when (raw.uppercase()) {
+        "CRITICAL" -> "HIGH"
+        "MAJOR" -> "MEDIUM"
+        "MINOR" -> "LOW"
+        else -> raw.uppercase()
     }
 
     private fun qualityGateDisplay(status: String): Pair<String, String> = when (status.uppercase()) {

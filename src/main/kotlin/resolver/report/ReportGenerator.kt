@@ -53,7 +53,9 @@ class ReportGenerator(
         val sanitizedVersion = componentVersion.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val fileName = "$sanitizedName-$sanitizedVersion-sast-report.html"
 
-        outputDir.mkdirs()
+        if (!outputDir.mkdirs() && !outputDir.exists()) {
+            throw IllegalStateException("Failed to create output directory: ${outputDir.absolutePath}")
+        }
         val outputFile = File(outputDir, fileName)
         outputFile.writeText(html, Charsets.UTF_8)
         return outputFile

@@ -45,5 +45,24 @@ class ReportDataMapperTest {
         assertEquals("1 h 30 min", ReportDataMapper.formatEffortTotal(90))
         assertEquals("2 h 15 min", ReportDataMapper.formatEffortTotal(135))
     }
-}
 
+    @Test
+    fun `mapLegacySeverity maps legacy severity to impact severity`() {
+        assertEquals("BLOCKER", ReportDataMapper.mapLegacySeverity("BLOCKER"))
+        assertEquals("HIGH", ReportDataMapper.mapLegacySeverity("CRITICAL"))
+        assertEquals("MEDIUM", ReportDataMapper.mapLegacySeverity("MAJOR"))
+        assertEquals("LOW", ReportDataMapper.mapLegacySeverity("MINOR"))
+        assertEquals("INFO", ReportDataMapper.mapLegacySeverity("INFO"))
+    }
+
+    @Test
+    fun `mapLegacySeverity is case insensitive`() {
+        assertEquals("HIGH", ReportDataMapper.mapLegacySeverity("critical"))
+        assertEquals("MEDIUM", ReportDataMapper.mapLegacySeverity("Major"))
+    }
+
+    @Test
+    fun `mapLegacySeverity returns original value for unknown severity`() {
+        assertEquals("UNKNOWN", ReportDataMapper.mapLegacySeverity("UNKNOWN"))
+    }
+}

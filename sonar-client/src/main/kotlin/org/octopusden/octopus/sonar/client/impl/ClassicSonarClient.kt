@@ -118,6 +118,7 @@ class ClassicSonarClient(
             .encoder(JacksonEncoder(mapper))
             .decoder(JacksonDecoder(mapper))
             .logger(Slf4jLogger(SonarClient::class.java))
+            .logLevel(Logger.Level.BASIC)
             .target(SonarFeignApi::class.java, parametersProvider.getBaseUrl())
 
     companion object {

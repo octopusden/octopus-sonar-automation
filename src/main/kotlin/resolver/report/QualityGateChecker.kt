@@ -10,14 +10,14 @@ import org.octopusden.octopus.sonar.dto.QualityGateCheckResult
 class QualityGateChecker(private val sonarClient: SonarClient) {
 
     companion object {
-        val RATING_METRICS = listOf(
+        private val RATING_METRICS = listOf(
             "software_quality_reliability_rating",
             "software_quality_security_rating",
             "software_quality_maintainability_rating",
             "security_review_rating",
         )
 
-        val METRIC_DISPLAY_NAMES = mapOf(
+        private val METRIC_DISPLAY_NAMES = mapOf(
             "software_quality_reliability_rating" to "reliability",
             "software_quality_security_rating" to "security",
             "software_quality_maintainability_rating" to "maintainability",
