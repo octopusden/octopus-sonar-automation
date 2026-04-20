@@ -15,10 +15,6 @@ class ReportGeneratorCommand : CliktCommand(
 ) {
     private val sonarUrl by option(SONAR_SERVER_URL_OPTION, help = "Sonar server URL")
         .required().check("$SONAR_SERVER_URL_OPTION is empty") { it.isNotEmpty() }
-    private val sonarUsername by option(SONAR_USERNAME_OPTION, help = "Sonar username")
-        .required().check("$SONAR_USERNAME_OPTION is empty") { it.isNotEmpty() }
-    private val sonarPassword by option(SONAR_PASSWORD_OPTION, help = "Sonar password")
-        .required().check("$SONAR_PASSWORD_OPTION is empty") { it.isNotEmpty() }
 
     private val componentName by option(COMPONENT_NAME_OPTION, help = "Component name")
         .required().check("$COMPONENT_NAME_OPTION is empty") { it.isNotEmpty() }
@@ -38,8 +34,8 @@ class ReportGeneratorCommand : CliktCommand(
         val sonarClient = ClassicSonarClient(
             object : SonarClientParametersProvider {
                 override fun getBaseUrl() = sonarUrl
-                override fun getUsername() = sonarUsername
-                override fun getPassword() = sonarPassword
+                override fun getUsername() = System.getenv(SONAR_USERNAME_ENV)
+                override fun getPassword() = System.getenv(SONAR_PASSWORD_ENV)
                 override fun getConnectTimeoutInMillis() = 30_000L
                 override fun getReadTimeoutInMillis() = 60_000L
             }
@@ -72,8 +68,6 @@ class ReportGeneratorCommand : CliktCommand(
 
     companion object {
         const val SONAR_SERVER_URL_OPTION = "--sonar-server-url"
-        const val SONAR_USERNAME_OPTION = "--sonar-username"
-        const val SONAR_PASSWORD_OPTION = "--sonar-password"
 
         const val COMPONENT_NAME_OPTION = "--component-name"
         const val COMPONENT_VERSION_OPTION = "--component-version"
@@ -82,5 +76,8 @@ class ReportGeneratorCommand : CliktCommand(
         const val SONAR_PROJECT_NAME_OPTION = "--sonar-project-name"
         const val SONAR_SOURCE_BRANCH_OPTION = "--sonar-source-branch"
         const val SONAR_TARGET_BRANCH_OPTION = "--sonar-target-branch"
+
+        const val SONAR_USERNAME_ENV = "SONAR_USERNAME"
+        const val SONAR_PASSWORD_ENV = "SONAR_PASSWORD"
     }
 }

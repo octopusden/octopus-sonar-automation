@@ -4,12 +4,12 @@
         Generates a SAST HTML report from SonarQube analysis results.
         Depends on following TeamCity parameters:
         * SONAR_SERVER_URL
-        * SONAR_USERNAME
-        * SONAR_PASSWORD
         * SONAR_PROJECT_KEY
         * SONAR_PROJECT_NAME
         * SONAR_SOURCE_BRANCH
         * SONAR_TARGET_BRANCH
+        * env.SONAR_USERNAME
+        * env.SONAR_PASSWORD
     </description>
     <settings>
         <parameters>
@@ -25,17 +25,7 @@
             <runner name="Generate Sonar Report" type="simpleRunner">
                 <parameters>
                     <param name="script.content"><![CDATA[
-"%env.JDK_21_0_x64%/bin/java" -jar "./.sonar-automation/sonar-automation-${version}.jar" \
-  generate-sonar-report \
-  --sonar-server-url "%SONAR_SERVER_URL%" \
-  --sonar-username "%SONAR_USERNAME%" \
-  --sonar-password "%SONAR_PASSWORD%" \
-  --component-name "%COMPONENT_NAME%" \
-  --component-version "%COMPONENT_VERSION%" \
-  --sonar-project-key "%SONAR_PROJECT_KEY%" \
-  --sonar-project-name "%SONAR_PROJECT_NAME%" \
-  --sonar-source-branch "%SONAR_SOURCE_BRANCH%" \
-  --sonar-target-branch "%SONAR_TARGET_BRANCH%"
+"%env.JDK_21_0_x64%/bin/java" -jar "./.sonar-automation/sonar-automation-${version}.jar" generate-sonar-report --component-name "%COMPONENT_NAME%" --component-version "%COMPONENT_VERSION%" --sonar-project-key "%SONAR_PROJECT_KEY%" --sonar-project-name "%SONAR_PROJECT_NAME%" --sonar-source-branch "%SONAR_SOURCE_BRANCH%" --sonar-target-branch "%SONAR_TARGET_BRANCH%" --sonar-server-url "%SONAR_SERVER_URL%"
 ]]></param>
                     <param name="teamcity.step.mode" value="default"/>
                     <param name="use.custom.script" value="true"/>

@@ -33,7 +33,7 @@ class ReportGenerator(
         componentVersion: String,
         sonarProjectName: String,
         sonarServerUrl: String,
-        outputDir: File = File("."),
+        outputDir: File = File(DEFAULT_OUTPUT_DIR),
     ): File {
         val fetchedData = fetcher.fetch(projectKey, branch)
 
@@ -59,5 +59,9 @@ class ReportGenerator(
         val outputFile = File(outputDir, fileName)
         outputFile.writeText(html, Charsets.UTF_8)
         return outputFile
+    }
+
+    companion object {
+        private const val DEFAULT_OUTPUT_DIR = "sonar-report"
     }
 }
