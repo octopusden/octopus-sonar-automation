@@ -34,8 +34,8 @@ class ReportGeneratorCommand : CliktCommand(
         val sonarClient = ClassicSonarClient(
             object : SonarClientParametersProvider {
                 override fun getBaseUrl() = sonarUrl
-                override fun getUsername() = System.getenv(SONAR_USERNAME_OPTION)
-                override fun getPassword() = System.getenv(SONAR_PASSWORD_OPTION)
+                override fun getUsername() = System.getenv(SONAR_USERNAME_ENV)
+                override fun getPassword() = System.getenv(SONAR_PASSWORD_ENV)
                 override fun getConnectTimeoutInMillis() = 30_000L
                 override fun getReadTimeoutInMillis() = 60_000L
             }
@@ -68,8 +68,6 @@ class ReportGeneratorCommand : CliktCommand(
 
     companion object {
         const val SONAR_SERVER_URL_OPTION = "--sonar-server-url"
-        const val SONAR_USERNAME_OPTION = "--sonar-username"
-        const val SONAR_PASSWORD_OPTION = "--sonar-password"
 
         const val COMPONENT_NAME_OPTION = "--component-name"
         const val COMPONENT_VERSION_OPTION = "--component-version"
@@ -78,5 +76,8 @@ class ReportGeneratorCommand : CliktCommand(
         const val SONAR_PROJECT_NAME_OPTION = "--sonar-project-name"
         const val SONAR_SOURCE_BRANCH_OPTION = "--sonar-source-branch"
         const val SONAR_TARGET_BRANCH_OPTION = "--sonar-target-branch"
+
+        const val SONAR_USERNAME_ENV = "SONAR_USERNAME"
+        const val SONAR_PASSWORD_ENV = "SONAR_PASSWORD"
     }
 }
