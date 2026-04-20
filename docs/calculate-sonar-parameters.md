@@ -57,11 +57,11 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode     | Source Branch                                                            | Target Branch                                                                                                |
-|----------------|--------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                               |
-| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                       |
-| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | (Not actually used) Source branch if it matches a candidate, otherwise first candidate (no VCS Facade calls) |
+| Build Mode     | Source Branch                                                            | Target Branch                                                                                                                                                                                                                   |
+|----------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                                                                                                                                                  |
+| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                                                                                                                                          |
+| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | Best-effort only (no VCS Facade calls): source branch if it matches a candidate, otherwise first candidate. Not used for Sonar parameters — `SONAR_EXTRA_PARAMETERS` is left empty since legacy config handles branch settings. |
 
 ### Sonar Server ID & URL
 

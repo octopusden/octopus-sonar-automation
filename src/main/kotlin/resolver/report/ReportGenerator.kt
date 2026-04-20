@@ -55,10 +55,10 @@ class ReportGenerator(
 
         if (outputDir.exists()) {
             require(outputDir.isDirectory) { "Output path exists but is not a directory: ${outputDir.absolutePath}" }
-        } else if (!outputDir.mkdirs()) {
+        } else if (!outputDir.mkdirs() && !outputDir.isDirectory) {
             throw IllegalStateException("Failed to create output directory: ${outputDir.absolutePath}")
         }
-        
+
         val outputFile = File(outputDir, fileName)
         outputFile.writeText(html, Charsets.UTF_8)
         return outputFile
