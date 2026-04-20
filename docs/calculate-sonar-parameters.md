@@ -112,11 +112,13 @@ For **regular branch builds**, the tool must determine which production/release 
 
 2. **Short-circuit**: if the source branch is itself one of the candidate branches (e.g. building `main` directly), it is returned immediately with no VCS Facade calls.
 
-3. **Candidate-first, window-second iteration**:
-   - Candidates are evaluated in the order provided (typically `[main, master]` or the component's default branches).
-   - For each candidate, the resolver tries progressively wider time windows to find a **common commit hash** (the diverge point) between the source branch and that candidate.
-   - As soon as a common commit is found, that candidate is returned immediately — remaining candidates and windows are not checked.
-   - If all windows are exhausted for a candidate without finding a match, the next candidate is tried.
+3. **Window-first, candidate-second iteration**:
+   - The resolver iterates over progressively wider time windows (outer loop).
+   - For each window, it first fetches the **source branch** commits (cached across windows). If fetching fails, it immediately returns the first candidate as a fallback. If no commits are found in the current window, it skips to the next (wider) window.
+   - Within each window, it iterates over all **candidate branches** (inner loop) in order. For each candidate, it fetches the candidate's commits in the same window and looks for a common commit hash with the source branch.
+   - As soon as a common commit is found with any candidate, that candidate is returned immediately — remaining candidates and windows are not checked.
+   - If a candidate branch is not found (`NotFoundException`) or any other error occurs fetching its commits, that candidate is **permanently skipped** for all subsequent windows.
+   - If no candidate matches in the current window, the next (wider) window is tried with all non-skipped candidates.
 
 4. **Window growth**:
    - Starts at `initialWindowDays` (default: **10 days**).
@@ -144,15 +146,16 @@ For **regular branch builds**, the tool must determine which production/release 
 Source branch: feature/ABC-123
 Candidates:   [main, master]
 
-Candidate "main":
-  Window 10 days:
-    feature/ABC-123 commits: [f3, f2, f1]
-    main commits:            [m5, m4, m3]        → no common hash
-  Window 20 days:
-    feature/ABC-123 commits: [f3, f2, f1, base]
-    main commits:            [m5, m4, m3, base]  → common hash "base" found!
+Window 10 days:
+  feature/ABC-123 commits: [f3, f2, f1]
+  Candidate "main":   commits [m5, m4, m3]        → no common hash
+  Candidate "master": commits [x2, x1]            → no common hash
 
-Result: main  (candidate "master" was never checked)
+Window 20 days:
+  feature/ABC-123 commits: [f3, f2, f1, base]
+  Candidate "main":   commits [m5, m4, m3, base]  → common hash "base" found!
+
+Result: main  (candidate "master" was not checked in this window)
 ```
 
 ---
