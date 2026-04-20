@@ -15,10 +15,6 @@ class ReportGeneratorCommand : CliktCommand(
 ) {
     private val sonarUrl by option(SONAR_SERVER_URL_OPTION, help = "Sonar server URL")
         .required().check("$SONAR_SERVER_URL_OPTION is empty") { it.isNotEmpty() }
-    private val sonarUsername by option(SONAR_USERNAME_OPTION, help = "Sonar username")
-        .required().check("$SONAR_USERNAME_OPTION is empty") { it.isNotEmpty() }
-    private val sonarPassword by option(SONAR_PASSWORD_OPTION, help = "Sonar password")
-        .required().check("$SONAR_PASSWORD_OPTION is empty") { it.isNotEmpty() }
 
     private val componentName by option(COMPONENT_NAME_OPTION, help = "Component name")
         .required().check("$COMPONENT_NAME_OPTION is empty") { it.isNotEmpty() }
@@ -38,8 +34,8 @@ class ReportGeneratorCommand : CliktCommand(
         val sonarClient = ClassicSonarClient(
             object : SonarClientParametersProvider {
                 override fun getBaseUrl() = sonarUrl
-                override fun getUsername() = sonarUsername
-                override fun getPassword() = sonarPassword
+                override fun getUsername() = System.getenv(SONAR_USERNAME_OPTION)
+                override fun getPassword() = System.getenv(SONAR_PASSWORD_OPTION)
                 override fun getConnectTimeoutInMillis() = 30_000L
                 override fun getReadTimeoutInMillis() = 60_000L
             }

@@ -48,10 +48,7 @@
             <runner name="Fetch target branch" type="simpleRunner">
                 <parameters>
                     <param name="script.content"><![CDATA[
-SONAR_TARGET_BRANCH="%SONAR_TARGET_BRANCH%"
-if [ -n "$SONAR_TARGET_BRANCH" ]; then
-  git fetch origin "$SONAR_TARGET_BRANCH"
-fi
+git fetch origin "%SONAR_TARGET_BRANCH%"
 ]]></param>
                     <param name="teamcity.step.mode" value="default" />
                     <param name="use.custom.script" value="true" />
