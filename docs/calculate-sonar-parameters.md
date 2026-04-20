@@ -28,17 +28,17 @@ Components with SonarQube analysis already set up manually are supported via con
 
 ## Output Parameters
 
-| Parameter                         | Description                                                    |
-|-----------------------------------|----------------------------------------------------------------|
-| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT>`                  |
-| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT>`                  |
-| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                    |
-| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                        |
-| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                              |
-| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)     |
-| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)    |
-| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped              |
-| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                  |
+| Parameter                         | Description                                                 |
+|-----------------------------------|-------------------------------------------------------------|
+| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT_NAME>`          |
+| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT_NAME>`          |
+| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                 |
+| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                     |
+| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)  |
+| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference) |
+| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                           |
+| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped           |
+| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped               |
 
 ---
 
@@ -57,19 +57,11 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode     | Source Branch                        | Target Branch                                                                                         |
-|----------------|--------------------------------------|-------------------------------------------------------------------------------------------------------|
-| Branch build   | Branch from matched VCS settings     | Resolved via [Target Branch Analysis](#target-branch-analysis)                                        |
-| PR build       | `pull-requests/<PR_NUMBER>` from VCS | `%teamcity.pullRequest.target.branch%`                                                                |
-| `applied-sast` | Branch from matched VCS settings     | Best-effort: source branch if it matches a candidate, otherwise first candidate (no VCS Facade calls) |
-
-### Sonar Extra Parameters
-
-| Build Mode     | Parameters Set                                                                                                      |
-|----------------|---------------------------------------------------------------------------------------------------------------------|
-| PR build       | `sonar.pullrequest.key`, `sonar.pullrequest.branch`, `sonar.pullrequest.base` — from TeamCity's PR parameters       |
-| Branch build   | `sonar.branch.name` = source branch; `sonar.newCode.referenceBranch` = target branch (omitted when source = target) |
-| `applied-sast` | Empty (handled by legacy config)                                                                                    |
+| Build Mode     | Source Branch                                                            | Target Branch                                                                                                |
+|----------------|--------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                               |
+| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                       |
+| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | (Not actually used) Source branch if it matches a candidate, otherwise first candidate (no VCS Facade calls) |
 
 ### Sonar Server ID & URL
 
@@ -80,6 +72,14 @@ Determined by the component's language labels from the Components Registry:
 | `c`, `cpp`, `objective_c`, `swift`     | Developer Edition    |
 | Everything else                        | Community Edition    |
 
+### Sonar Extra Parameters
+
+| Build Mode     | Parameters Set                                                                                                      |
+|----------------|---------------------------------------------------------------------------------------------------------------------|
+| PR build       | `sonar.pullrequest.key`, `sonar.pullrequest.branch`, `sonar.pullrequest.base` — from TeamCity's PR parameters       |
+| Branch build   | `sonar.branch.name` = source branch; `sonar.newCode.referenceBranch` = target branch (omitted when source = target) |
+| `applied-sast` | Empty (handled by legacy config)                                                                                    |
+
 ### Skip Sonar Metarunner Execution
 
 The metarunner scan is **skipped** when any of the following hold:
@@ -87,7 +87,7 @@ The metarunner scan is **skipped** when any of the following hold:
 - Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
 - Component is archived
 - Component is labelled `test-component`
-- Java/Kotlin component using JDK 17/21, or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
+- Java/Kotlin component using JDK 17/21 or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
 
 ### Skip Sonar Report Generation
 

@@ -30,6 +30,7 @@ class TeamCityNotifier(
 
         val baseUrl = sonarServerUrl.trimEnd('/')
         val branchParam = branchOrPrParam(sourceBranch)
+
         val encodedProjectKey = URLEncoder.encode(projectKey, StandardCharsets.UTF_8)
         val dashboardLink = "$baseUrl/dashboard?id=$encodedProjectKey&$branchParam"
         val newIssuesLink = "$baseUrl/project/issues?inNewCodePeriod=true&id=$encodedProjectKey&$branchParam"
