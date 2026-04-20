@@ -4,6 +4,7 @@ import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.CommitStampDTO
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
 import org.octopusden.octopus.sonar.util.BitbucketSshUrlParser
+import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
 import org.octopusden.octopus.sonar.util.normalizedBranch
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
 import org.octopusden.octopus.components.registry.core.dto.VersionControlSystemRootDTO
@@ -103,7 +104,7 @@ class CommitStampResolver(
         val (projectKey, repoKey) = BitbucketSshUrlParser.parseRepository(commit.vcsUrl)
         return ResolvedVCSDTO(
             commit = commit,
-            defaultBranches = DEFAULT_BRANCHES,
+            defaultBranches = DEFAULT_BRANCH_CANDIDATES,
             bbProjectKey = projectKey,
             bbRepositoryKey = repoKey
         )
@@ -131,7 +132,7 @@ class CommitStampResolver(
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .ifEmpty { null }
-            ?: DEFAULT_BRANCHES
+            ?: DEFAULT_BRANCH_CANDIDATES
 
         val (projectKey, repoKey) = BitbucketSshUrlParser.parseRepository(matchedCommit.vcsUrl)
         return ResolvedVCSDTO(
@@ -149,8 +150,5 @@ class CommitStampResolver(
         private const val NOT_AVAILABLE_EXTERNAL_REGISTRY = "NOT_AVAILABLE"
 
         private val VCS_URL_PROPERTY_NAMES = setOf("url", "repositoryPath", "cvs-root")
-
-        /** Default candidate target branches used when no VCS settings are available. */
-        private val DEFAULT_BRANCHES = listOf("main", "master")
     }
 }
