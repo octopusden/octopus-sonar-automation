@@ -59,8 +59,9 @@
                 <parameters>
                     <param name="env.SONAR_TARGET_BRANCH" value="%SONAR_TARGET_BRANCH%" />
                     <param name="script.content"><![CDATA[
+SONAR_TARGET_BRANCH="%SONAR_TARGET_BRANCH%"
 if [ -n "$SONAR_TARGET_BRANCH" ]; then
-  git fetch origin -- "$SONAR_TARGET_BRANCH"
+  git fetch origin "$SONAR_TARGET_BRANCH"
 fi
 ]]></param>
                     <param name="teamcity.step.mode" value="default" />

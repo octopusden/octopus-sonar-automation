@@ -33,7 +33,7 @@ class ReportGenerator(
         componentVersion: String,
         sonarProjectName: String,
         sonarServerUrl: String,
-        outputDir: File = File("."),
+        outputDir: File = File("sonar-report"),
     ): File {
         val fetchedData = fetcher.fetch(projectKey, branch)
 
