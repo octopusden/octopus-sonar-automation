@@ -13,7 +13,6 @@ package org.octopusden.octopus.sonar.dto
  *                                     pull-request source branch parameter for PR builds).
  * @param sonarTargetBranch            The base branch to compare against (or the TeamCity
  *                                     pull-request target branch parameter for PR builds).
- *                                     Empty when applied-SAST override is used.
  * @param sonarServerId                TeamCity parameter name that holds the Sonar server ID.
  * @param sonarServerUrl               TeamCity parameter name that holds the Sonar server URL.
  * @param sonarExtraParameters         The `-Dsonar.*` flags string passed to the Sonar scanner.

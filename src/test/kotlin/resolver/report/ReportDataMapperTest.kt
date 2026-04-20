@@ -1,9 +1,68 @@
 package org.octopusden.octopus.sonar.resolver.report
 
+import org.octopusden.octopus.sonar.client.dto.IssueDTO
+import org.octopusden.octopus.sonar.client.dto.IssueImpactDTO
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ReportDataMapperTest {
+
+    private val mapper = ReportDataMapper()
+
+    private fun issueWith(
+        severity: String = "MAJOR",
+        impacts: List<IssueImpactDTO> = emptyList()
+    ) = IssueDTO(
+        key = "K1",
+        rule = "rule:1",
+        severity = severity,
+        component = "proj:src/Foo.java",
+        line = 1,
+        status = "OPEN",
+        message = "msg",
+        effort = "5min",
+        author = "author",
+        creationDate = Date(),
+        updateDate = Date(),
+        type = "BUG",
+        scope = "MAIN",
+        impacts = impacts,
+    )
+
+    private fun mapSingleIssue(issue: IssueDTO) =
+        mapper.map(
+            fetchedData = ReportDataFetcher.FetchedData(
+                effortTotal = 0,
+                issues = listOf(issue),
+                hotspots = emptyList(),
+                qualityGateStatus = "OK",
+            ),
+            componentName = "comp",
+            componentVersion = "1.0",
+            sonarProjectName = "proj",
+            sonarServerUrl = "https://sonar.example.com",
+            sonarProjectKey = "proj",
+            sourceBranch = "main",
+        ).issues.single()
+
+    @Test
+    fun `map issue with empty impacts falls back to legacy severity mapping`() {
+        val result = mapSingleIssue(issueWith(severity = "CRITICAL", impacts = emptyList()))
+        assertEquals("HIGH", result.severity)
+        assertEquals("", result.softwareQuality)
+    }
+
+    @Test
+    fun `map issue with impacts uses first impact severity`() {
+        val impacts = listOf(
+            IssueImpactDTO(softwareQuality = "MAINTAINABILITY", severity = "LOW"),
+            IssueImpactDTO(softwareQuality = "RELIABILITY", severity = "HIGH"),
+        )
+        val result = mapSingleIssue(issueWith(severity = "CRITICAL", impacts = impacts))
+        assertEquals("LOW", result.severity, "Should use first impact's severity, not legacy")
+        assertEquals("MAINTAINABILITY", result.softwareQuality)
+    }
 
     @Test
     fun `extractRepository from PROJECT_repo_component format`() {
