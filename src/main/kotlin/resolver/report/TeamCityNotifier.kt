@@ -33,9 +33,8 @@ class TeamCityNotifier(
         val branchParam = branchOrPrParam(sourceBranch)
 
         val encodedProjectKey = URLEncoder.encode(projectKey, StandardCharsets.UTF_8)
-        val encodedBranchParam = URLEncoder.encode(branchParam, StandardCharsets.UTF_8)
-        val dashboardLink = "$baseUrl/dashboard?id=$encodedProjectKey&$encodedBranchParam"
-        val newIssuesLink = "$baseUrl/project/issues?inNewCodePeriod=true&id=$encodedProjectKey&$encodedBranchParam"
+        val dashboardLink = "$baseUrl/dashboard?id=$encodedProjectKey&$branchParam"
+        val newIssuesLink = "$baseUrl/project/issues?inNewCodePeriod=true&id=$encodedProjectKey&$branchParam"
 
         if (!result.isQualityGatePassed) {
             messages.add(

@@ -163,7 +163,7 @@ class TeamCityNotifierTest {
 
     @Test
     fun `branchOrPrParam returns branch param for feature branch`() {
-        assertEquals("branch=feature/xyz", TeamCityNotifier.branchOrPrParam("feature/xyz"))
+        assertEquals("branch=feature%2Fxyz", TeamCityNotifier.branchOrPrParam("feature/xyz"))
     }
 
     @Test
@@ -195,7 +195,7 @@ class TeamCityNotifierTest {
         assertEquals(1, messages.size)
         assertTrue(messages[0].contains("##teamcity[buildProblem"))
         assertTrue(messages[0].contains("Sonar Quality Gate FAILED"))
-        assertTrue(messages[0].contains("branch=feature/abc"))
+        assertTrue(messages[0].contains("branch=feature%2Fabc"))
     }
 
     // ── multiple failed metrics formatting ───────────────────────────────────
