@@ -2,7 +2,8 @@ package org.octopusden.octopus.sonar.dto
 
 data class SonarServerParametersDTO(
     val id: String,
-    val url: String
+    val url: String,
+    val token: String
 ) {
     companion object {
         /** Language labels that require the Developer Edition SonarQube server. */
@@ -10,12 +11,14 @@ data class SonarServerParametersDTO(
 
         val DEVELOPER = SonarServerParametersDTO(
             id    = "%SONAR_DEVELOPER_ID%",
-            url   = "%SONAR_DEVELOPER_URL%"
+            url   = "%SONAR_DEVELOPER_URL%",
+            token = "%SONAR_DEVELOPER_TOKEN%"
         )
 
         val COMMUNITY = SonarServerParametersDTO(
             id    = "%SONAR_COMMUNITY_ID%",
-            url   = "%SONAR_COMMUNITY_URL%"
+            url   = "%SONAR_COMMUNITY_URL%",
+            token = "%SONAR_COMMUNITY_TOKEN%"
         )
     }
 }

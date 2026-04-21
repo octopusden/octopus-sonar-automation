@@ -28,17 +28,18 @@ Components with SonarQube analysis already set up manually are supported via con
 
 ## Output Parameters
 
-| Parameter                         | Description                                                 |
-|-----------------------------------|-------------------------------------------------------------|
-| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT_NAME>`          |
-| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT_NAME>`          |
-| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                 |
-| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                     |
-| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)  |
-| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference) |
-| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                           |
-| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped           |
-| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped               |
+| Parameter                         | Description                                                            |
+|-----------------------------------|------------------------------------------------------------------------|
+| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT_NAME>`                     |
+| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT_NAME>`                     |
+| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                            |
+| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                                |
+| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)             |
+| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)            |
+| `SONAR_SERVER_TOKEN`              | Authentication token for the SonarQube server (TC parameter reference) |
+| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                      |
+| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                      |
+| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                          |
 
 ---
 
@@ -63,7 +64,7 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 | PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                                                                                                                                          |
 | `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | Best-effort only (no VCS Facade calls): source branch if it matches a candidate, otherwise first candidate. Not used for Sonar parameters — `SONAR_EXTRA_PARAMETERS` is left empty since legacy config handles branch settings. |
 
-### Sonar Server ID & URL
+### Sonar Server ID, URL, and Token
 
 Determined by the component's language labels from the Components Registry:
 

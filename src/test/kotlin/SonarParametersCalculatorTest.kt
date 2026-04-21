@@ -83,6 +83,7 @@ class SonarParametersCalculatorTest {
         )
         assertEquals(SonarServerParametersDTO.COMMUNITY.id, result.sonarServerId)
         assertEquals(SonarServerParametersDTO.COMMUNITY.url, result.sonarServerUrl)
+        assertEquals(SonarServerParametersDTO.COMMUNITY.token, result.sonarServerToken)
         assertFalse(result.skipSonarMetarunnerExecution)
         assertTrue(result.skipSonarReportGeneration)
 
@@ -228,6 +229,7 @@ class SonarParametersCalculatorTest {
 
         assertEquals(SonarServerParametersDTO.DEVELOPER.id, result.sonarServerId)
         assertEquals(SonarServerParametersDTO.DEVELOPER.url, result.sonarServerUrl)
+        assertEquals(SonarServerParametersDTO.DEVELOPER.token, result.sonarServerToken)
     }
 
     @Test

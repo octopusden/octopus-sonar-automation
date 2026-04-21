@@ -62,6 +62,7 @@ class SonarParametersCalculator(
             sonarExtraParameters = branchContext.sonarExtraParameters,
             sonarServerId = sonarServer.id,
             sonarServerUrl = sonarServer.url,
+            sonarServerToken = sonarServer.token,
             skipSonarMetarunnerExecution = skipMetarunnerExecution,
             skipSonarReportGeneration = skipReportGeneration
         )
