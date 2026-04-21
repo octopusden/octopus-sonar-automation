@@ -75,9 +75,9 @@ class TeamCityNotifier(
          */
         fun branchOrPrParam(branch: String): String {
             return if (branch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
-                "pullRequest=${branch.removePrefix(PULL_REQUEST_BRANCH_MARKER)}"
+                "pullRequest=${URLEncoder.encode(branch.removePrefix(PULL_REQUEST_BRANCH_MARKER), StandardCharsets.UTF_8)}"
             } else {
-                "branch=$branch"
+                "branch=${URLEncoder.encode(branch, StandardCharsets.UTF_8)}"
             }
         }
     }
