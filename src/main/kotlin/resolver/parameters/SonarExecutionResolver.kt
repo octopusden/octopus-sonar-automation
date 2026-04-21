@@ -23,11 +23,10 @@ class SonarExecutionResolver(
     private val crsClient: ComponentsRegistryServiceClient,
     configDir: Path,
 ) {
-    private val externalConfigDir: Path = configDir
 
-    private val appliedSastComponents: Map<String, SonarProjectOverride> = loadAppliedSast(externalConfigDir)
-    private val otherDocComponents: Set<String> = loadList(externalConfigDir, OTHER_DOC_FILE)
-    private val mismatchJavaVersionComponents: Set<String> = loadList(externalConfigDir, MISMATCH_JAVA_VERSION_FILE)
+    private val appliedSastComponents: Map<String, SonarProjectOverride> = loadAppliedSast(configDir)
+    private val otherDocComponents: Set<String> = loadList(configDir, OTHER_DOC_FILE)
+    private val mismatchJavaVersionComponents: Set<String> = loadList(configDir, MISMATCH_JAVA_VERSION_FILE)
 
     /**
      * Returns the Sonar project override if the component is in the applied-SAST list, or null otherwise.
