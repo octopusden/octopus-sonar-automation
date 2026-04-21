@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="SonarQube Runner">
+    <description>
+        SonarQube Community and Developer Runner
+        Depends on following TeamCity parameter(s):
+        * SONAR_SERVER_ID
+        * SONAR_JDK_HOME
+        * SONAR_SCANNER_RUNNER
+    </description>
+    <settings>
+        <parameters>
+            <param name="SONAR_PARAMETERS" value="%SONAR_PARAMETERS%" spec="text display='normal' description='Default Sonar analysis parameters (must include: host URL, authentication token, project key, project name, project version).'"/>
+            <param name="SONAR_PROJECT_SOURCES" value="%SONAR_PROJECT_SOURCES%" spec="text display='normal' description='Comma-separated paths to directories containing source files (e.g. src/main/java). Leave blank to use scanner defaults.'"/>
+            <param name="SONAR_PROJECT_BINARIES" value="%SONAR_PROJECT_BINARIES%" spec="text display='normal' description='Comma-separated paths to directories containing compiled binaries (e.g. target/classes). Required for Java/Kotlin analysis. Leave blank if not applicable.'"/>
+            <param name="SONAR_PROJECT_MODULES" value="%SONAR_PROJECT_MODULES%" spec="text display='normal' description='Comma-separated list of sub-modules in a multi-module project. Leave blank for single-module projects.'"/>
+            <param name="SONAR_PROJECT_TESTS" value="%SONAR_PROJECT_TESTS%" spec="text display='normal' description='Comma-separated paths to directories containing test source files (e.g. src/test/java). Leave blank if not applicable.'"/>
+            <param name="WORK_DIR" value="%WORK_DIR%" spec="text display='normal' description='Working directory for the scanner execution. Leave blank to use the default checkout directory.'"/>
+        </parameters>
+        <build-runners>
+            <runner name="SonarQube Analysis" type="sonar-plugin">
+                <parameters>
+                    <param name="additionalParameters"><![CDATA[%SONAR_PARAMETERS%]]></param>
+                    <param name="sonarProjectSources" value="%SONAR_PROJECT_SOURCES%" />
+                    <param name="sonarProjectBinaries" value="%SONAR_PROJECT_BINARIES%" />
+                    <param name="sonarProjectModules" value="%SONAR_PROJECT_MODULES%" />
+                    <param name="sonarProjectTests" value="%SONAR_PROJECT_TESTS%" />
+                    <param name="sonarServer" value="%SONAR_SERVER_ID%" />
+                    <param name="target.jdk.home" value="%SONAR_JDK_HOME%" />
+                    <param name="teamcity.build.workingDir" value="%WORK_DIR%" />
+                    <param name="teamcity.step.mode" value="default" />
+                    <param name="teamcity.tool.sonarquberunner" value="%SONAR_SCANNER_RUNNER%" />
+                </parameters>
+            </runner>
+        </build-runners>
+    </settings>
+</meta-runner>
