@@ -148,4 +148,5 @@ class SonarExecutionResolver(
 
 private fun String.isDocPrefix(): Boolean =
     startsWith("doc-", ignoreCase = true) || startsWith("doc_", ignoreCase = true)
+            || endsWith("-doc", ignoreCase = true) || endsWith("_doc", ignoreCase = true)
 

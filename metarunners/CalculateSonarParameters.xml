@@ -48,9 +48,13 @@
             </runner>
             <runner name="Fetch target branch" type="simpleRunner">
                 <parameters>
-                    <param name="env.SONAR_TARGET_BRANCH" value="%SONAR_TARGET_BRANCH%" />
                     <param name="script.content"><![CDATA[
-git fetch origin "%SONAR_TARGET_BRANCH%"
+SONAR_TARGET_BRANCH="%SONAR_TARGET_BRANCH%"
+if [ -n "$SONAR_TARGET_BRANCH" ]; then
+    git fetch origin -- "$SONAR_TARGET_BRANCH"
+else
+    echo "SONAR_TARGET_BRANCH is not set. Skipping fetch."
+fi
 ]]></param>
                     <param name="teamcity.step.mode" value="default" />
                     <param name="use.custom.script" value="true" />

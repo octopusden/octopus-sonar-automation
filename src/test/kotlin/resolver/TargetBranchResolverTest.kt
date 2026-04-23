@@ -92,23 +92,16 @@ class TargetBranchResolverTest {
     // ── diverge-point detection ───────────────────────────────────────────────
 
     @Test
-    fun `returns main when source branch shares common commit with main`() {
+    fun `returns main when source branch shares common commit with main and master has no overlap`() {
         // source: f2 -> f1 -> shared (branched from main at 'shared')
         // main:   m1 -> m2 -> shared -> m3
+        // master: no overlap — resolver must check all candidates before deciding
         stubCommits("feature/abc", listOf(Fixtures.commit("f2"), Fixtures.commit("f1"), Fixtures.commit("shared")))
         stubCommits("main",        listOf(Fixtures.commit("m3"), Fixtures.commit("shared"), Fixtures.commit("m1")))
+        stubCommits("master",      listOf(Fixtures.commit("x1"), Fixtures.commit("x2")))
 
         val result = resolver.findTargetBranch(stamp("feature/abc"), listOf("main", "master"))
         assertEquals("main", result)
-
-        verify(exactly = 0) {
-            vcsFacadeClient.getCommits(
-                sshUrl = Fixtures.REPO_URL,
-                toHashOrRef = "master",
-                fromDate = any(),
-                fromHashOrRef = null,
-            )
-        }
     }
 
     @Test
@@ -204,6 +197,44 @@ class TargetBranchResolverTest {
         val result = resolver.findTargetBranch(stamp("feature/x"), listOf("main", "master"))
         assertEquals("master", result)
     }
+
+    @Test
+    fun `feature branched from release which branched from main - release wins over main`() {
+        // Commit graph:
+        //   A -- B -- C -- D -- E        main
+        //        \
+        //         R1 -- R2 -- R3         release/1.0
+        //                       \
+        //                        F1 -- F2 -- F3    feature/FIX
+        //
+        // feature/FIX diverged from release/1.0 at R3  → index 3 in source history
+        // feature/FIX also shares B (and A) with main  → index 6 in source history
+        //
+        // With candidates [main, release/1.0], old (early-return) code would pick "main"
+        // because it is listed first and shares commit B.
+        // Correct answer is "release/1.0" because R3 is a closer (more recent) ancestor.
+
+        // source history ordered newest → oldest: F3, F2, F1, R3, R2, R1, B, A
+        stubCommits(
+            "feature/FIX",
+            listOf("F3", "F2", "F1", "R3", "R2", "R1", "B", "A").map { Fixtures.commit(it) },
+        )
+        // main history: E, D, C, B, A  — shares B at source-index 6
+        stubCommits(
+            "main",
+            listOf("E", "D", "C", "B", "A").map { Fixtures.commit(it) },
+        )
+        // release/1.0 history: R3, R2, R1, B, A  — shares R3 at source-index 3
+        stubCommits(
+            "release/1.0",
+            listOf("R3", "R2", "R1", "B", "A").map { Fixtures.commit(it) },
+        )
+
+        val result = resolver.findTargetBranch(stamp("feature/FIX"), listOf("main", "release/1.0"))
+        assertEquals("release/1.0", result)
+    }
+
+    // ── candidate order does not beat closer common ancestor - regression ──────
 
     @Test
     fun `candidate order does not beat closer common ancestor - regression`() {

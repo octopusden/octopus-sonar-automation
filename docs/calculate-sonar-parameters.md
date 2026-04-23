@@ -113,11 +113,11 @@ For **regular branch builds**, the tool must determine which production/release 
 
 2. **Short-circuit**: if the source branch is itself one of the candidate branches (e.g. building `main` directly), it is returned immediately with no VCS Facade calls.
 
-3. **Window-first, candidate-second iteration**:
+3. **Window-first, best-candidate-per-window iteration**:
    - The resolver iterates over progressively wider time windows (outer loop).
    - For each window, it first fetches the **source branch** commits (cached across windows). If fetching fails, it immediately returns the first candidate as a fallback. If no commits are found in the current window, it skips to the next (wider) window.
-   - Within each window, it iterates over all **candidate branches** (inner loop) in order. For each candidate, it fetches the candidate's commits in the same window and looks for a common commit hash with the source branch.
-   - As soon as a common commit is found with any candidate, that candidate is returned immediately — remaining candidates and windows are not checked.
+   - Within each window, it evaluates **all non-skipped candidate branches** (inner loop). For each candidate, it fetches the candidate's commits in the same window and finds the first commit hash shared with the source branch. The position of that shared commit in the source-branch history (its index, with index 0 being the most recent commit) is recorded.
+   - After all candidates have been evaluated for the current window, the candidate with the **lowest index** (i.e. the most recent common ancestor, meaning the branch the source diverged from most recently) is selected and returned. Candidate order is used only as a tie-breaker when two candidates share the same index.
    - If a candidate branch is not found (`NotFoundException`) or any other error occurs fetching its commits, that candidate is **permanently skipped** for all subsequent windows.
    - If no candidate matches in the current window, the next (wider) window is tried with all non-skipped candidates.
 
@@ -134,7 +134,7 @@ For **regular branch builds**, the tool must determine which production/release 
    |-----------------------------------------------------|-----------------------------|
    | Only one candidate                                  | Returns that candidate      |
    | Source branch is a candidate                        | Returns source branch       |
-   | Common commit found with a candidate                | Returns that candidate      |
+   | Common commit found with a candidate                | Returns closest ancestor    |
    | VCS Facade error fetching source branch commits     | Returns first candidate     |
    | Candidate branch not found (`NotFoundException`)    | Skips candidate, tries next |
    | VCS Facade error fetching candidate commits         | Skips candidate, tries next |
@@ -144,20 +144,29 @@ For **regular branch builds**, the tool must determine which production/release 
 ### Example
 
 ```text
-Source branch: feature/ABC-123
-Candidates:   [main, master]
+Source branch: feature/FIX
+Candidates:   [main, release/1.0]
 
-Window 10 days:
-  feature/ABC-123 commits: [f3, f2, f1]
-  Candidate "main":   commits [m5, m4, m3]        → no common hash
-  Candidate "master": commits [x2, x1]            → no common hash
+Commit graph:
+  A -- B -- C -- D -- E        main
+       \
+        R1 -- R2 -- R3         release/1.0
+                      \
+                       F1 -- F2 -- F3    feature/FIX
 
-Window 20 days:
-  feature/ABC-123 commits: [f3, f2, f1, base]
-  Candidate "main":   commits [m5, m4, m3, base]  → common hash "base" found!
+Window 10 days (source commits: [F3, F2, F1, R3]):
+  Candidate "main":       no common hash in window
+  Candidate "release/1.0": common hash "R3" at index 3
 
-Result: main  (candidate "master" was not checked in this window)
+Window 20 days (source commits: [F3, F2, F1, R3, R2, R1, B, A]):
+  Candidate "main":       common hash "B" at index 6
+  Candidate "release/1.0": common hash "R3" at index 3  ← lower index (closer ancestor)
+
+Best candidate in window: release/1.0 (index 3 < 6)
+Result: release/1.0
 ```
+
+This ensures the most recently diverged branch is always returned, regardless of candidate order.
 
 ---
 
