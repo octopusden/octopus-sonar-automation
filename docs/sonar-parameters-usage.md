@@ -6,8 +6,9 @@ Explains how the parameters produced by `CalculateSonarParameters` are consumed 
 
 ## `SONAR_PARAMETERS`
 
-The `SONAR_PARAMETERS` TeamCity parameter is the single string that carries all core `-Dsonar.*` flags needed for analysis.
-It is assembled from the output of the `CalculateSonarParameters` metarunner and must contain at minimum:
+`SONAR_PARAMETERS` must be defined at the **TeamCity project or build-template level** as a parameter that composes the individual outputs of the `CalculateSonarParameters` metarunner into a single `-Dsonar.*` string.
+
+The parameter value must contain at minimum:
 
 ```text
 -Dsonar.projectKey=%SONAR_PROJECT_KEY%
