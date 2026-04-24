@@ -1,0 +1,6 @@
+{
+  "component-with-sast": {
+    "sonarProjectKey": "PROJECT_component-with-sast",
+    "sonarProjectName": "PROJECT/component-with-sast"
+  }
+}

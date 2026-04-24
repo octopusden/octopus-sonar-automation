@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SAST New Issues Report</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  [data-theme="dark"] {
+    --bg:        #0f1117;
+    --bg2:       #161b27;
+    --bg3:       #1e2535;
+    --border:    #2a3148;
+    --text:      #c9d1e8;
+    --text-strong: #e8edf8;
+    --muted:     #5a6480;
+    --accent:    #4f8ef7;
+    --critical:  #f05f5f;
+    --high:      #f0914a;
+    --medium:    #e8c84a;
+    --low:       #6ab0f5;
+    --green:     #4caf82;
+    --hotspot:   #c084fc;
+    --shadow:    none;
+  }
+
+  [data-theme="light"] {
+    --bg:        #f4f5f9;
+    --bg2:       #ffffff;
+    --bg3:       #eceef5;
+    --border:    #d5d9e8;
+    --text:      #374060;
+    --text-strong: #1a1f38;
+    --muted:     #8a93b0;
+    --accent:    #2563eb;
+    --critical:  #dc2626;
+    --high:      #c2570a;
+    --medium:    #a16207;
+    --low:       #1d6db8;
+    --green:     #16824e;
+    --hotspot:   #7c3aed;
+    --shadow:    0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    animation: fadeDown 0.4s ease both;
+    background: var(--bg2);
+    box-shadow: var(--shadow);
+  }
+
+  .header-left { display: flex; flex-direction: column; gap: 6px; }
+
+  .header-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .header-title {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .meta-item span { color: var(--text); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  .badge-gate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .badge-gate.passed {
+    background: rgba(76,175,130,0.10);
+    border: 1px solid rgba(76,175,130,0.2);
+    color: var(--green);
+  }
+
+  .badge-gate.failed {
+    background: rgba(240,95,95,0.10);
+    border: 1px solid rgba(240,95,95,0.2);
+    color: var(--critical);
+  }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .clean-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px 60px;
+    gap: 32px;
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+
+  .clean-ring {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid rgba(76,175,130,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(76,175,130,0.08);
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  .clean-check {
+    width: 32px;
+    height: 32px;
+    stroke: var(--green);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+    animation: drawCheck 0.5s 0.6s ease forwards;
+  }
+
+  @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(76,175,130,0.15); }
+    50%       { box-shadow: 0 0 0 12px rgba(76,175,130,0); }
+  }
+
+  .clean-text { text-align: center; display: flex; flex-direction: column; gap: 8px; }
+
+  .clean-title {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
+  }
+
+  .clean-subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 400px;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-label">SAST Report — Overall Code on $esc.html($sourceBranch)</div>
+    <div class="header-title">$esc.html($componentName):$esc.html($componentVersion)</div>
+    <div class="header-meta">
+      <div class="meta-item">Repository <span>$esc.html($repository)</span></div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" id="theme-btn">☀️</button>
+    <div class="badge-gate $esc.html($qualityGateCssClass)">
+      <div class="dot"></div>
+      $esc.html($qualityGateLabel)
+    </div>
+  </div>
+</div>
+
+<!-- CLEAN STATE -->
+<div class="clean-state">
+  <div class="clean-ring">
+    <svg class="clean-check" viewBox="0 0 32 32">
+      <polyline points="6,17 13,24 26,10"/>
+    </svg>
+  </div>
+  <div class="clean-text">
+    <div class="clean-title">No new issues found</div>
+    <div class="clean-subtitle">
+      All code in this branch is clean. No security vulnerabilities, bugs, or code smells were introduced. No security hotspots require review.
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('theme-btn').textContent = isDark ? '🌙' : '☀️';
+  }
+</script>
+</body>
+</html>
+

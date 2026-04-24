@@ -1,0 +1,15 @@
+name: Check for artifact and register release
+
+on:
+  workflow_run:
+    workflows: ["Gradle Release"]
+    types:
+      - completed
+
+jobs:
+  build:
+    uses: octopusden/octopus-base/.github/workflows/common-check-and-register-release.yml@v2.1.1
+    if:  "${{ github.event.workflow_run.conclusion == 'success' }}"
+    with:
+      artifact-pattern: "octopus/sonar/sonar-automation/_VER_/sonar-automation-_VER_.jar"
+    secrets: inherit

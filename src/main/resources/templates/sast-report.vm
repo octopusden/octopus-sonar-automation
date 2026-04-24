@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SAST New Issues Report</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  [data-theme="dark"] {
+    --bg:        #0f1117;
+    --bg2:       #161b27;
+    --bg3:       #1e2535;
+    --border:    #2a3148;
+    --text:      #c9d1e8;
+    --text-strong: #e8edf8;
+    --muted:     #5a6480;
+    --accent:    #4f8ef7;
+    --blocker:   #f05f5f;
+    --high:      #f0914a;
+    --medium:    #e8c84a;
+    --low:       #6ab0f5;
+    --info:      #94a3b8;
+    --green:     #4caf82;
+    --hotspot:   #c084fc;
+    --new-issue-bg:    rgba(79,142,247,0.10);
+    --new-issue-border:rgba(79,142,247,0.35);
+    --new-issue-color: #7eb4fa;
+    --shadow:    none;
+  }
+
+  [data-theme="light"] {
+    --bg:        #f4f5f9;
+    --bg2:       #ffffff;
+    --bg3:       #eceef5;
+    --border:    #d5d9e8;
+    --text:      #374060;
+    --text-strong: #1a1f38;
+    --muted:     #8a93b0;
+    --accent:    #2563eb;
+    --blocker:   #dc2626;
+    --high:      #c2570a;
+    --medium:    #a16207;
+    --low:       #1d6db8;
+    --info:      #64748b;
+    --green:     #16824e;
+    --hotspot:   #7c3aed;
+    --new-issue-bg:    rgba(37,99,235,0.08);
+    --new-issue-border:rgba(37,99,235,0.28);
+    --new-issue-color: #2563eb;
+    --shadow:    0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  /* ── header ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    animation: fadeDown 0.4s ease both;
+    background: var(--bg2);
+    box-shadow: var(--shadow);
+  }
+
+  .header-left { display: flex; flex-direction: column; gap: 6px; }
+
+  .header-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .header-title {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .meta-item span { color: var(--text); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  .badge-gate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .badge-gate.passed {
+    background: rgba(76,175,130,0.10);
+    border: 1px solid rgba(76,175,130,0.2);
+    color: var(--green);
+  }
+
+  .badge-gate.failed {
+    background: rgba(240,95,95,0.10);
+    border: 1px solid rgba(240,95,95,0.2);
+    color: var(--blocker);
+  }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* ── context bar ── */
+  .context-bar {
+    padding: 12px 40px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    animation: fadeDown 0.4s 0.06s ease both;
+  }
+
+  .branch-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .chip-master {
+    background: rgba(76,175,130,0.10);
+    border: 1px solid rgba(76,175,130,0.2);
+    color: var(--green);
+  }
+
+  /* ── summary bar ── */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    animation: fadeDown 0.4s 0.08s ease both;
+  }
+
+  .summary-cell {
+    padding: 20px 24px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .summary-cell:last-child { border-right: none; }
+  .summary-cell:hover { background: var(--bg3); }
+  .summary-cell.active { background: var(--bg3); }
+
+  .summary-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .severity-blocker .summary-label { color: var(--blocker); }
+  .severity-high     .summary-label { color: var(--high); }
+  .severity-medium   .summary-label { color: var(--medium); }
+  .severity-low      .summary-label { color: var(--low); }
+  .severity-info     .summary-label { color: var(--info); }
+  .severity-hotspot  .summary-label { color: var(--hotspot); }
+
+  .summary-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text-strong);
+    line-height: 1;
+    opacity: 0.85;
+  }
+
+  .severity-blocker .summary-count { color: var(--blocker); }
+  .severity-high     .summary-count { color: var(--high); }
+  .severity-medium   .summary-count { color: var(--medium); }
+  .severity-low      .summary-count { color: var(--low); }
+  .severity-info     .summary-count { color: var(--info); }
+  .severity-hotspot  .summary-count { color: var(--hotspot); }
+
+  .summary-sub { font-size: 11px; color: var(--muted); }
+
+  /* ── toolbar ── */
+  .toolbar {
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    animation: fadeDown 0.4s 0.12s ease both;
+    box-shadow: var(--shadow);
+  }
+
+  .filter-group { display: flex; gap: 4px; }
+
+  .filter-btn {
+    padding: 5px 12px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--new-issue-bg); border-color: var(--accent); color: var(--accent); }
+
+  .search-box {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+  }
+
+  .search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    width: 200px;
+  }
+
+  .search-box input::placeholder { color: var(--muted); }
+  .search-icon { color: var(--muted); font-size: 13px; }
+
+  /* ── issue list ── */
+  .issue-list {
+    padding: 20px 40px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeUp 0.4s 0.18s ease both;
+  }
+
+  /* ── severity group ── */
+  .severity-group { display: flex; flex-direction: column; gap: 8px; }
+  .severity-group.hidden { display: none; }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .group-header-bar {
+    width: 12px; height: 3px; border-radius: 2px; flex-shrink: 0;
+  }
+  .group-blocker .group-header-bar { background: var(--blocker); }
+  .group-high     .group-header-bar { background: var(--high); }
+  .group-medium   .group-header-bar { background: var(--medium); }
+  .group-low      .group-header-bar { background: var(--low); }
+  .group-info     .group-header-bar { background: var(--info); }
+  .group-hotspot  .group-header-bar { background: var(--hotspot); }
+
+  .group-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .group-blocker .group-title { color: var(--blocker); }
+  .group-high     .group-title { color: var(--high); }
+  .group-medium   .group-title { color: var(--medium); }
+  .group-low      .group-title { color: var(--low); }
+  .group-info     .group-title { color: var(--info); }
+  .group-hotspot  .group-title { color: var(--hotspot); }
+
+  .group-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 8px;
+  }
+
+  .group-divider {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .group-toggle {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    transition: transform 0.2s;
+  }
+  .group-body { display: flex; flex-direction: column; gap: 6px; }
+  .group-body.collapsed { display: none; }
+
+  /* ── hotspot section label ── */
+  .hotspot-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--hotspot);
+    background: rgba(192,132,252,0.07);
+    border: 1px solid rgba(192,132,252,0.2);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+
+  /* ── issue cardss ── */
+  .issue-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+
+  .issue-card:hover { border-color: var(--accent); }
+  .issue-card.expanded { border-color: var(--accent); }
+  .issue-card.hidden { display: none; }
+
+  .issue-main {
+    display: grid;
+    grid-template-columns: 4px 140px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+  }
+
+  .severity-bar {
+    width: 4px;
+    align-self: stretch;
+    border-radius: 2px;
+    min-height: 44px;
+  }
+
+  .sev-blocker { background: var(--blocker); }
+  .sev-high     { background: var(--high); }
+  .sev-medium   { background: var(--medium); }
+  .sev-low      { background: var(--low); }
+  .sev-info     { background: var(--info); }
+
+  .badge-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .badge-blocker { background: rgba(240,95,95,0.12);  border: 1px solid rgba(240,95,95,0.25);  color: var(--blocker); }
+  .badge-high     { background: rgba(240,145,74,0.12); border: 1px solid rgba(240,145,74,0.25); color: var(--high); }
+  .badge-medium   { background: rgba(232,200,74,0.12); border: 1px solid rgba(232,200,74,0.25); color: var(--medium); }
+  .badge-low      { background: rgba(106,176,245,0.12);border: 1px solid rgba(106,176,245,0.25);color: var(--low); }
+  .badge-info     { background: rgba(148,163,184,0.10);border: 1px solid rgba(148,163,184,0.22);color: var(--info); }
+  .badge-hotspot  { background: rgba(192,132,252,0.12);border: 1px solid rgba(192,132,252,0.25);color: var(--hotspot); }
+
+  .issue-body { min-width: 0; }
+
+  .issue-rule {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+
+  .issue-message {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .issue-location {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .issue-location .filename { color: var(--accent); }
+
+  .issue-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .effort-chip {
+    padding: 2px 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ── expanded detail (no code, just info) ── */
+  .issue-detail {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 16px 18px 16px calc(4px + 140px + 16px + 16px + 18px);
+    background: var(--bg3);
+    gap: 16px;
+    flex-direction: column;
+  }
+
+  .issue-card.expanded .issue-detail { display: flex; }
+
+  .detail-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .info-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  .info-block-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  .info-block-value { font-size: 13px; color: var(--text); }
+  .info-block-value.mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+  .empty-state {
+    display: none;
+    padding: 60px 40px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── inline links ── */
+  a.issue-link, a.file-link {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.15s, color 0.15s;
+    cursor: pointer;
+  }
+  a.issue-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  a.file-link { color: var(--accent); }
+  a.file-link:hover { border-bottom-color: var(--accent); opacity: 0.8; }
+  a.issue-link::after, a.file-link::after {
+    content: ' ↗'; font-size: 9px; opacity: 0;
+    transition: opacity 0.15s; vertical-align: super;
+  }
+  a.issue-link:hover::after, a.file-link:hover::after { opacity: 0.7; }
+  .issue-message a.issue-link {
+    display: block; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+  }
+
+  /* ── probability pill (detail panel) ── */
+  .prob-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .prob-pill-high   { background: rgba(240,95,95,0.12);  border: 1px solid rgba(240,95,95,0.30);  color: var(--blocker); }
+  .prob-pill-medium { background: rgba(232,200,74,0.12); border: 1px solid rgba(232,200,74,0.30); color: var(--medium); }
+  .prob-pill-low    { background: rgba(106,176,245,0.12);border: 1px solid rgba(106,176,245,0.25);color: var(--low); }
+  .prob-pill-dot    { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* ── prob-badge (badge-col on hotspot cardss) ── */
+  .prob-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+  }
+  .prob-badge-high   { background: rgba(240,95,95,0.10);  border: 1px solid rgba(240,95,95,0.25);  color: var(--blocker); }
+  .prob-badge-medium { background: rgba(232,200,74,0.10); border: 1px solid rgba(232,200,74,0.25); color: var(--medium); }
+  .prob-badge-low    { background: rgba(106,176,245,0.10);border: 1px solid rgba(106,176,245,0.25);color: var(--low); }
+
+  .filter-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--muted); letter-spacing: 0.08em;
+    text-transform: uppercase; align-self: center; padding: 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-label">SAST Report — Overall Code on $esc.html($sourceBranch)</div>
+    <div class="header-title">$esc.html($componentName):$esc.html($componentVersion)</div>
+    <div class="header-meta">
+      <div class="meta-item">Repository <span>$esc.html($repository)</span></div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" id="theme-btn">☀️</button>
+    <div class="badge-gate $esc.html($qualityGateCssClass)">
+      <div class="dot"></div>
+      $esc.html($qualityGateLabel)
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT BAR -->
+<div class="context-bar">
+  <div class="meta-item">Effort total <span>$esc.html($effortTotal)</span></div>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <div class="summary-cell severity-all active" data-sev="all" onclick="filterSeverity('all', this)">
+    <div class="summary-label">All Issues</div>
+    <div class="summary-count">$totalIssueCount</div>
+    <div class="summary-sub">total</div>
+  </div>
+  <div class="summary-cell severity-info" data-sev="info" onclick="filterSeverity('info', this)">
+    <div class="summary-label">Info</div>
+    <div class="summary-count">$infoCount</div>
+    <div class="summary-sub">info</div>
+  </div>
+  <div class="summary-cell severity-low" data-sev="low" onclick="filterSeverity('low', this)">
+    <div class="summary-label">Low</div>
+    <div class="summary-count">$lowCount</div>
+    <div class="summary-sub">advisory</div>
+  </div>
+  <div class="summary-cell severity-medium" data-sev="medium" onclick="filterSeverity('medium', this)">
+    <div class="summary-label">Medium</div>
+    <div class="summary-count">$mediumCount</div>
+    <div class="summary-sub">advisory</div>
+  </div>
+  <div class="summary-cell severity-high" data-sev="high" onclick="filterSeverity('high', this)">
+    <div class="summary-label">High</div>
+    <div class="summary-count">$highCount</div>
+    <div class="summary-sub">major</div>
+  </div>
+  <div class="summary-cell severity-blocker" data-sev="blocker" onclick="filterSeverity('blocker', this)">
+    <div class="summary-label">Blocker</div>
+    <div class="summary-count">$blockerCount</div>
+    <div class="summary-sub">blocker</div>
+  </div>
+  <div class="summary-cell severity-hotspot" data-sev="hotspot" onclick="filterSeverity('hotspot', this)">
+    <div class="summary-label">Hotspots</div>
+    <div class="summary-count">$hotspotCount</div>
+    <div class="summary-sub">needs review</div>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="filter-group" id="filter-types">
+    <button class="filter-btn active" onclick="filterType('all', this)">All types</button>
+    <button class="filter-btn" onclick="filterType('VULNERABILITY', this)">Vulnerability</button>
+    <button class="filter-btn" onclick="filterType('BUG', this)">Bug</button>
+    <button class="filter-btn" onclick="filterType('CODE_SMELL', this)">Code smell</button>
+  </div>
+  <div class="filter-group" id="filter-hotspot" style="display:none;">
+    <button class="filter-btn active" onclick="filterProbability('all', this)">All Vulnerability Probabilities</button>
+    <button class="filter-btn prob-high" onclick="filterProbability('HIGH', this)">High</button>
+    <button class="filter-btn prob-medium" onclick="filterProbability('MEDIUM', this)">Medium</button>
+    <button class="filter-btn prob-low" onclick="filterProbability('LOW', this)">Low</button>
+  </div>
+  <div class="search-box">
+    <span class="search-icon">⌕</span>
+    <input type="text" placeholder="Search file, rule, message..." oninput="searchIssues(this.value)"/>
+  </div>
+</div>
+
+<!-- ISSUE LIST -->
+<div class="issue-list" id="issue-list">
+
+#foreach($group in $severityGroups)
+  <!-- ═══════════════════════════ $group.name.toUpperCase() ═══════════════════════════ -->
+  <div class="severity-group group-$group.key" data-group="$group.key">
+    <div class="group-header" onclick="toggleGroup(this)">
+      <div class="group-header-bar"></div>
+      <div class="group-title">$group.name</div>
+      <div class="group-count" id="count-$group.key">#if($group.issues.size() == 1)1 item#{else}$group.issues.size() items#end</div>
+      <div class="group-divider"></div>
+      <div class="group-toggle">▼</div>
+    </div>
+    <div class="group-body" id="body-$group.key">
+#foreach($issue in $group.issues)
+
+      <div class="issue-card" data-severity="$issue.severity.toLowerCase()" data-type="$esc.html($issue.type)" onclick="toggleExpand(this)">
+        <div class="issue-main">
+          <div class="severity-bar sev-$issue.severity.toLowerCase()"></div>
+          <div class="badge-col">
+            <div class="severity-badge badge-$issue.severity.toLowerCase()"><div class="dot"></div>$helper.capitalise($issue.severity)</div>
+          </div>
+          <div class="issue-body">
+            <div class="issue-rule">$esc.html($issue.rule) · $helper.formatType($issue.type)</div>
+            <div class="issue-message"><a class="issue-link" href="$esc.html($helper.issueUrl($issue))" target="_blank" title="View issue on SonarQube">$esc.html($issue.message)</a></div>
+            <div class="issue-location"><span class="filename">$esc.html($issue.fileName)</span> · line $issue.line</div>
+          </div>
+          <div class="issue-meta">
+            <span class="effort-chip">$esc.html($issue.effort) fix</span>
+          </div>
+        </div>
+        <div class="issue-detail">
+          <div class="detail-info">
+            <div class="info-block"><div class="info-block-label">Rule</div><div class="info-block-value mono"><a class="issue-link" href="$esc.html($helper.ruleUrl($issue.rule))" target="_blank" title="View rule on SonarQube">$esc.html($issue.rule)</a></div></div>
+            <div class="info-block"><div class="info-block-label">Type</div><div class="info-block-value">$helper.formatType($issue.type)</div></div>
+            <div class="info-block"><div class="info-block-label">Fix effort</div><div class="info-block-value">~$esc.html($issue.effort)</div></div>
+          </div>
+        </div>
+      </div>
+#end
+    </div>
+  </div>
+
+#end
+
+#if($hotspots.size() > 0)
+  <!-- ═══════════════════════════ SECURITY HOTSPOTS ═══════════════════════════ -->
+  <div class="severity-group group-hotspot" data-group="hotspot">
+    <div class="group-header" onclick="toggleGroup(this)">
+      <div class="group-header-bar"></div>
+      <div class="group-title">Security Hotspots</div>
+      <div class="group-count" id="count-hotspot">#if($hotspots.size() == 1)1 item#{else}$hotspots.size() items#end</div>
+      <div class="group-divider"></div>
+      <div class="group-toggle">▼</div>
+    </div>
+    <div class="group-body" id="body-hotspot">
+
+      <div class="hotspot-notice">
+        🔍 Hotspots require manual review — they may or may not be actual vulnerabilities. Confirm intent and mark as safe or address accordingly.
+      </div>
+
+#foreach($hotspot in $hotspots)
+      <div class="issue-card" data-severity="hotspot" data-type="SECURITY_HOTSPOT" data-probability="$hotspot.vulnerabilityProbability.toUpperCase()" onclick="toggleExpand(this)">
+        <div class="issue-main">
+          <div class="severity-bar" style="background:var(--hotspot)"></div>
+          <div class="badge-col">
+            <div class="severity-badge badge-hotspot"><div class="dot"></div>Hotspot</div>
+            <div class="prob-badge prob-badge-$hotspot.vulnerabilityProbability.toLowerCase()">$helper.capitalise($hotspot.vulnerabilityProbability)</div>
+          </div>
+          <div class="issue-body">
+            <div class="issue-rule">$esc.html($hotspot.rule) · Security hotspot</div>
+            <div class="issue-message"><a class="issue-link" href="$esc.html($helper.hotspotUrl($hotspot))" target="_blank" title="View hotspot on SonarQube">$esc.html($hotspot.message)</a></div>
+            <div class="issue-location"><span class="filename">$esc.html($hotspot.fileName)</span> · line $hotspot.line</div>
+          </div>
+          <div class="issue-meta">
+            <span class="effort-chip">$helper.formatSecurityCategory($hotspot.securityCategory)</span>
+          </div>
+        </div>
+        <div class="issue-detail">
+          <div class="detail-info">
+            <div class="info-block"><div class="info-block-label">Rule</div><div class="info-block-value mono"><a class="issue-link" href="$esc.html($helper.ruleUrl($hotspot.rule))" target="_blank" title="View rule on SonarQube">$esc.html($hotspot.rule)</a></div></div>
+            <div class="info-block"><div class="info-block-label">Vulnerability probability</div><div class="info-block-value"><span class="prob-pill prob-pill-$hotspot.vulnerabilityProbability.toLowerCase()"><span class="prob-pill-dot"></span>$helper.capitalise($hotspot.vulnerabilityProbability)</span></div></div>
+            <div class="info-block"><div class="info-block-label">Security category</div><div class="info-block-value">$helper.formatSecurityCategory($hotspot.securityCategory)</div></div>
+          </div>
+        </div>
+      </div>
+#end
+
+    </div>
+  </div>
+#end
+
+  <div class="empty-state" id="empty-state">No issues match the current filter.</div>
+</div>
+
+<script>
+  let activeSeverity = 'all';
+  let activeType = 'all';
+  let activeProbability = 'all';
+  let searchQuery = '';
+
+  const STATIC_COUNTS = {};
+
+  function applyFilters() {
+    const cardss = document.querySelectorAll('.issue-card');
+    const groups = document.querySelectorAll('.severity-group');
+    let totalVisible = 0;
+    const groupVisible = {};
+    const severityCount = {};
+
+    cardss.forEach(card => {
+      const sev           = card.dataset.severity;
+      const type          = card.dataset.type;
+      const prob          = (card.dataset.probability || '').toUpperCase();
+      const isHotspotCard = sev === 'hotspot';
+      const text          = card.innerText.toLowerCase();
+
+      let sevOk;
+      if (activeSeverity === 'hotspot') {
+        sevOk = isHotspotCard;
+      } else if (activeSeverity === 'all') {
+        sevOk = !isHotspotCard;
+      } else {
+        sevOk = sev === activeSeverity;
+      }
+
+      const typeOk = activeSeverity === 'hotspot'
+        ? true
+        : isHotspotCard
+          ? false
+          : (activeType === 'all' || type === activeType);
+
+      const probOk = activeSeverity !== 'hotspot'
+        ? true
+        : (activeProbability === 'all' || prob === activeProbability);
+
+      const searchOk = searchQuery === '' || text.includes(searchQuery.toLowerCase());
+
+      const visible = sevOk && typeOk && probOk && searchOk;
+      card.classList.toggle('hidden', !visible);
+
+      if (visible) {
+        totalVisible++;
+        severityCount[sev] = (severityCount[sev] || 0) + 1;
+        groupVisible[sev]  = (groupVisible[sev]  || 0) + 1;
+      }
+    });
+
+    groups.forEach(group => {
+      const grp = group.dataset.group;
+      const cnt = groupVisible[grp] || 0;
+      group.classList.toggle('hidden', cnt === 0);
+      const chip = group.querySelector('.group-count');
+      if (chip) chip.textContent = cnt === 1 ? '1 item' : cnt + ' items';
+    });
+
+    const allNonHotspot = Object.entries(severityCount)
+      .filter(([k]) => k !== 'hotspot')
+      .reduce((s, [, v]) => s + v, 0);
+
+    const countMap = {
+      all:     allNonHotspot,
+      info:    severityCount['info']    || 0,
+      low:     severityCount['low']     || 0,
+      medium:  severityCount['medium']  || 0,
+      high:    severityCount['high']    || 0,
+      blocker: severityCount['blocker'] || 0,
+      hotspot: severityCount['hotspot'] || 0,
+    };
+
+    // Summary bar always shows static totals — never changes with type/search filters
+    document.querySelectorAll('.summary-cell[data-sev]').forEach(cell => {
+      const key = cell.dataset.sev;
+      const el  = cell.querySelector('.summary-count');
+      if (el && STATIC_COUNTS[key] !== undefined) el.textContent = STATIC_COUNTS[key];
+    });
+
+    document.getElementById('empty-state').style.display = totalVisible === 0 ? 'block' : 'none';
+  }
+
+  function filterSeverity(sev, el) {
+    activeSeverity = sev;
+    document.querySelectorAll('.summary-cell').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+
+    const isHotspot = sev === 'hotspot';
+    document.getElementById('filter-types').style.display   = isHotspot ? 'none' : 'flex';
+    document.getElementById('filter-hotspot').style.display = isHotspot ? 'flex' : 'none';
+
+    if (isHotspot) {
+      activeProbability = 'all';
+      document.querySelectorAll('#filter-hotspot .filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('#filter-hotspot .filter-btn').classList.add('active');
+    } else {
+      activeType = 'all';
+      document.querySelectorAll('#filter-types .filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('#filter-types .filter-btn').classList.add('active');
+    }
+
+    applyFilters();
+  }
+
+  function filterType(type, el) {
+    activeType = type;
+    document.querySelectorAll('#filter-types .filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    applyFilters();
+  }
+
+  function filterProbability(prob, el) {
+    activeProbability = prob;
+    document.querySelectorAll('#filter-hotspot .filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    applyFilters();
+  }
+
+  function searchIssues(val) {
+    searchQuery = val;
+    applyFilters();
+  }
+
+  function toggleExpand(card) {
+    const wasExpanded = card.classList.contains('expanded');
+    document.querySelectorAll('.issue-card.expanded').forEach(c => c.classList.remove('expanded'));
+    if (!wasExpanded) card.classList.add('expanded');
+  }
+
+  function toggleGroup(header) {
+    const toggle = header.querySelector('.group-toggle');
+    const groupEl = header.closest('.severity-group');
+    const body = groupEl.querySelector('.group-body');
+    const collapsed = body.classList.toggle('collapsed');
+    toggle.style.transform = collapsed ? 'rotate(-90deg)' : '';
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('theme-btn').textContent = isDark ? '🌙' : '☀️';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.issue-card').forEach(card => {
+      const sev = card.dataset.severity;
+      STATIC_COUNTS[sev] = (STATIC_COUNTS[sev] || 0) + 1;
+    });
+    STATIC_COUNTS['all'] = Object.entries(STATIC_COUNTS)
+      .filter(([k]) => k !== 'hotspot')
+      .reduce((s, [, v]) => s + v, 0);
+
+    applyFilters();
+
+    document.querySelectorAll('.issue-card a').forEach(link => {
+      link.addEventListener('click', e => e.stopPropagation());
+    });
+  });
+</script>
+</body>
+</html>
+

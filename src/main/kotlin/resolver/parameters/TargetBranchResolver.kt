@@ -1,0 +1,166 @@
+package org.octopusden.octopus.sonar.resolver.parameters
+
+import org.octopusden.octopus.sonar.dto.CommitStampDTO
+import org.octopusden.octopus.vcsfacade.client.common.exception.NotFoundException
+import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
+import org.slf4j.LoggerFactory
+import java.util.Date
+
+/**
+ * Resolves the Sonar target branch for a given regular-branch build.
+ *
+ * For **pull-request** builds the target branch is read directly from TeamCity parameters
+ * (`teamcity.pullRequest.target.branch`) and this resolver is not involved.
+ *
+ * For **regular branch** builds it uses the VCS Facade to identify which candidate branch
+ * the source branch diverged from, by comparing commit histories.
+ */
+class TargetBranchResolver(
+    private val vcsFacadeClient: ClassicVcsFacadeClient,
+    private val initialWindowDays: Int = 10,
+    private val maxWindowDays: Int = 365,
+    private val windowGrowthFactor: Int = 2,
+    private val nowProviderMillis: () -> Long = { System.currentTimeMillis() },
+) {
+    init {
+        require(initialWindowDays > 0) { "initialWindowDays must be > 0" }
+        require(maxWindowDays >= initialWindowDays) { "maxWindowDays must be >= initialWindowDays" }
+        require(windowGrowthFactor > 1) { "windowGrowthFactor must be > 1" }
+    }
+
+    /**
+     * Finds the best-matching base branch by comparing the source branch's commit history
+     * against each candidate branch.
+     */
+    fun findTargetBranch(commit: CommitStampDTO, candidates: List<String>): String {
+        require(candidates.isNotEmpty()) { "candidates must not be empty" }
+
+        if (candidates.size == 1) {
+            logger.info("Only one candidate '{}' - returning it as target", candidates.first())
+            return candidates.first()
+        }
+
+        if (commit.branch in candidates) {
+            logger.info("Source branch '${commit.branch}' is itself a candidate - returning it as target")
+            return commit.branch
+        }
+
+        val windowDaysList = buildWindowDays()
+        val sourceHashesByWindow = mutableMapOf<Int, List<String>>()
+        val skippedCandidates = mutableSetOf<String>()
+
+        for (windowDays in windowDaysList) {
+            val sourceBranchHashes = runCatching {
+                sourceHashesByWindow.getOrPut(windowDays) {
+                    val fromDate = Date(nowProviderMillis() - windowDays * DAY_IN_MILLIS)
+                    logger.debug("Fetching source commits using last {} days window", windowDays)
+                    vcsFacadeClient.getCommits(
+                        commit.vcsUrl,
+                        fromDate = fromDate,
+                        toHashOrRef = commit.branch,
+                        fromHashOrRef = null,
+                    ).map { it.hash }
+                }
+            }.getOrElse {
+                logger.warn("Failed to fetch commits for source branch '{}': {}", commit.branch, it.message)
+                return candidates.first()
+            }
+
+            if (sourceBranchHashes.isEmpty()) {
+                logger.debug("No commits found on '{}' in the last {} days", commit.branch, windowDays)
+                continue
+            }
+
+            // Evaluate ALL non-skipped candidates within this window and pick the one whose
+            // shared commit appears closest to the tip of the source branch (lowest index).
+            // Candidate order is used only as a tie-breaker.
+            var bestCandidate: String? = null
+            var bestIndex: Int = Int.MAX_VALUE
+
+            for (candidate in candidates) {
+                if (candidate in skippedCandidates) continue
+                logger.debug("Evaluating candidate '{}' with {} days window", candidate, windowDays)
+
+                val fromDate = Date(nowProviderMillis() - windowDays * DAY_IN_MILLIS)
+                val candidateHashes = try {
+                    vcsFacadeClient.getCommits(
+                        commit.vcsUrl,
+                        fromDate = fromDate,
+                        toHashOrRef = candidate,
+                        fromHashOrRef = null,
+                    ).asSequence().map { it.hash }.toHashSet()
+                } catch (_: NotFoundException) {
+                    logger.warn("Candidate branch '{}' not found in VCS Facade - skipping", candidate)
+                    skippedCandidates += candidate
+                    continue
+                } catch (e: Exception) {
+                    logger.warn("Failed to fetch commits for candidate '{}': {}", candidate, e.message)
+                    skippedCandidates += candidate
+                    continue
+                }
+
+                val commonIndex = sourceBranchHashes.indexOfFirst { it in candidateHashes }
+                if (commonIndex != -1 && commonIndex < bestIndex) {
+                    bestIndex = commonIndex
+                    bestCandidate = candidate
+                    logger.debug(
+                        "'{}' is currently the best candidate for '{}' (shared commit index {})",
+                        candidate, commit.branch, commonIndex,
+                    )
+                }
+            }
+
+            if (bestCandidate != null) {
+                logger.info(
+                    "'{}' diverged from '{}' (closest shared commit index {} in {}-day window)",
+                    commit.branch, bestCandidate, bestIndex, windowDays,
+                )
+                return bestCandidate
+            }
+        }
+
+        logger.warn("Could not determine target branch from {} - falling back to '{}'", candidates, candidates.first())
+        return candidates.first()
+    }
+
+    /**
+     * Best-effort target branch resolution without VCS Facade calls.
+     *
+     * Returns the source branch if it matches any candidate, otherwise returns the first candidate.
+     * Used for applied-SAST components where exact diverge-point detection is not required.
+     */
+    fun findTargetBranchBestEffort(commit: CommitStampDTO, candidates: List<String>): String {
+        require(candidates.isNotEmpty()) { "candidates must not be empty" }
+
+        if (commit.branch in candidates) {
+            logger.info("Best-effort: source branch '{}' matches candidate - returning it", commit.branch)
+            return commit.branch
+        }
+
+        logger.info("Best-effort: source branch '{}' not in candidates {} - returning first", commit.branch, candidates)
+        return candidates.first()
+    }
+
+    private fun buildWindowDays(): List<Int> {
+        val windows = mutableListOf<Int>()
+        var current = initialWindowDays
+
+        while (current < maxWindowDays) {
+            windows += current
+            val next = current * windowGrowthFactor
+            if (next <= current) break
+            current = next
+        }
+
+        if (windows.isEmpty() || windows.last() != maxWindowDays) {
+            windows += maxWindowDays
+        }
+
+        return windows
+    }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(TargetBranchResolver::class.java)
+        private const val DAY_IN_MILLIS = 24L * 60 * 60 * 1000
+    }
+}

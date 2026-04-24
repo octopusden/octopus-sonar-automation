@@ -1,0 +1,2 @@
+# Test fixture list for SonarExecutionResolverTest
+mismatch-java-component
