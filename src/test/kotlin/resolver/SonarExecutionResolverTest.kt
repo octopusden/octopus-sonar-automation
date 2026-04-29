@@ -306,7 +306,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `gradle plugin skipped for non-java non-kotlin component`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
-            labels = setOf("python"), javaVersion = "17"
+            labels = setOf("python"), javaVersion = "17", buildSystem = BuildSystem.GRADLE
         )
         assertTrue(resolver.skipSonarGradlePluginExecution("comp", "1.0"))
     }
@@ -314,7 +314,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `gradle plugin skipped for java gradle component with old javaVersion not in mismatch list`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
-            labels = setOf("java"), javaVersion = "8"
+            labels = setOf("java"), javaVersion = "8", buildSystem = BuildSystem.GRADLE
         )
         assertTrue(resolver.skipSonarGradlePluginExecution("comp", "1.0"))
     }
@@ -324,7 +324,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `gradle plugin not skipped for java gradle component with javaVersion 17`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
-            labels = setOf("java"), javaVersion = "17"
+            labels = setOf("java"), javaVersion = "17", buildSystem = BuildSystem.GRADLE
         )
         assertFalse(resolver.skipSonarGradlePluginExecution("comp", "1.0"))
     }
@@ -332,7 +332,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `gradle plugin not skipped for kotlin gradle component with javaVersion 21`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
-            labels = setOf("kotlin"), javaVersion = "21"
+            labels = setOf("kotlin"), javaVersion = "21", buildSystem = BuildSystem.GRADLE
         )
         assertFalse(resolver.skipSonarGradlePluginExecution("comp", "1.0"))
     }
@@ -340,7 +340,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `gradle plugin not skipped for java gradle component in mismatch list`() {
         every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns Fixtures.detailedComponent(
-            labels = setOf("java"), javaVersion = "8"
+            labels = setOf("java"), javaVersion = "8", buildSystem = BuildSystem.GRADLE
         )
         assertFalse(resolver.skipSonarGradlePluginExecution("mismatch-java-component", "1.0"))
     }
