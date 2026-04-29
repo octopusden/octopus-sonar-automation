@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
 import org.octopusden.octopus.components.registry.core.dto.BuildSystem
+import org.octopusden.octopus.components.registry.core.dto.DetailedComponent
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -47,33 +48,17 @@ class SonarExecutionResolver(
      *   the Gradle/Maven Sonar plugins
      */
     fun skipSonarMetarunnerExecution(componentName: String, componentVersion: String): Boolean {
-        if (componentName in appliedSastComponents) {
-            logger.info("$componentName is in applied-sast.json - skipping")
-            return true
-        }
-
-        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
-            logger.info("$componentName is a documentation component - skipping")
-            return true
-        }
+        skipIfAppliedSast(componentName)?.let { return it }
+        skipIfDoc(componentName)?.let { return it }
 
         val component = crsClient.getDetailedComponent(componentName, componentVersion)
 
-        if (component.archived) {
-            logger.info("$componentName is archived - skipping")
-            return true
-        }
+        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return it }
 
-        if (component.labels.contains("test-component")) {
-            logger.info("$componentName is labelled test-component - skipping")
-            return true
-        }
+        val isJavaOrKotlin = component.isJavaOrKotlin()
+        val isModernOrMismatch = component.isModernJava() || componentName in mismatchJavaVersionComponents
 
-        val isJavaOrKotlin = component.labels.contains("java") || component.labels.contains("kotlin")
-        val isModernJava = component.buildParameters?.javaVersion == "17" || component.buildParameters?.javaVersion == "21"
-        val isMismatchComponent = componentName in mismatchJavaVersionComponents
-
-        if (isJavaOrKotlin && (isModernJava || isMismatchComponent)) {
+        if (isJavaOrKotlin && isModernOrMismatch) {
             logger.info("$componentName uses java/kotlin - skipping (handled by Gradle/Maven plugins)")
             return true
         }
@@ -90,69 +75,73 @@ class SonarExecutionResolver(
      * - Component is labelled `test-component`
      */
     fun skipSonarReportGeneration(componentName: String): Boolean {
-        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
-            logger.info("$componentName is a documentation component - skipping")
-            return true
-        }
+        skipIfDoc(componentName)?.let { return it }
 
         val component = crsClient.getById(componentName)
 
-        if (component.archived) {
-            logger.info("$componentName is archived - skipping")
-            return true
-        }
-
-        if (component.labels.contains("test-component")) {
-            logger.info("$componentName is labelled test-component - skipping")
-            return true
-        }
+        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return it }
 
         return false
     }
 
     fun skipSonarGradlePluginExecution(componentName: String, componentVersion: String): Boolean {
-        if (componentName in appliedSastComponents) {
-            logger.info("$componentName is in applied-sast.json - skipping")
-            return true
-        }
-
-        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
-            logger.info("$componentName is a documentation component - skipping")
-            return true
-        }
+        skipIfAppliedSast(componentName)?.let { return it }
+        skipIfDoc(componentName)?.let { return it }
 
         val component = crsClient.getDetailedComponent(componentName, componentVersion)
 
-        if (component.archived) {
-            logger.info("$componentName is archived - skipping")
-            return true
-        }
-
-        if (component.labels.contains("test-component")) {
-            logger.info("$componentName is labelled test-component - skipping")
-            return true
-        }
+        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return it }
 
         if (component.buildSystem != BuildSystem.GRADLE) {
             logger.info("$componentName is not a Gradle component - skipping Gradle plugin execution")
             return true
         }
 
-        val isJavaOrKotlin = component.labels.contains("java") || component.labels.contains("kotlin")
-
-        if (!isJavaOrKotlin) {
+        if (!component.isJavaOrKotlin()) {
+            logger.info("$componentName is not java/kotlin - skipping Gradle plugin execution")
             return true
         }
 
-        val isModernJava = component.buildParameters?.javaVersion == "17" || component.buildParameters?.javaVersion == "21"
-        val isMismatchComponent = componentName in mismatchJavaVersionComponents
-
-        if (isModernJava || isMismatchComponent) {
+        if (component.isModernJava() || componentName in mismatchJavaVersionComponents) {
             return false
         }
 
         return true
     }
+
+    private fun skipIfAppliedSast(componentName: String): Boolean? {
+        if (componentName in appliedSastComponents) {
+            logger.info("$componentName is in applied-sast.json - skipping")
+            return true
+        }
+        return null
+    }
+
+    private fun skipIfDoc(componentName: String): Boolean? {
+        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
+            logger.info("$componentName is a documentation component - skipping")
+            return true
+        }
+        return null
+    }
+
+    private fun skipIfArchivedOrTest(componentName: String, archived: Boolean, labels: Set<String>): Boolean? {
+        if (archived) {
+            logger.info("$componentName is archived - skipping")
+            return true
+        }
+        if (labels.contains("test-component")) {
+            logger.info("$componentName is labelled test-component - skipping")
+            return true
+        }
+        return null
+    }
+
+    private fun DetailedComponent.isJavaOrKotlin(): Boolean =
+        labels.contains("java") || labels.contains("kotlin")
+
+    private fun DetailedComponent.isModernJava(): Boolean =
+        buildParameters?.javaVersion == "17" || buildParameters?.javaVersion == "21"
 
     companion object {
         private val logger = LoggerFactory.getLogger(SonarExecutionResolver::class.java)
