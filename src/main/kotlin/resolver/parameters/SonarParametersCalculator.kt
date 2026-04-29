@@ -53,6 +53,8 @@ class SonarParametersCalculator(
         val sonarServer = sonarServerResolver.resolveSonarServer(componentName)
         val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
         val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
+        val skipGradlePlugin = sonarExecutionResolver.skipSonarGradlePluginExecution(componentName, componentVersion)
+        val sonarGradleTask = if (skipGradlePlugin) "" else SONAR_GRADLE_PLUGIN_TASK
 
         return SonarParametersDTO(
             sonarProjectKey = projectContext.projectKey,
@@ -64,7 +66,8 @@ class SonarParametersCalculator(
             sonarServerUrl = sonarServer.url,
             sonarServerToken = sonarServer.token,
             skipSonarMetarunnerExecution = skipMetarunnerExecution,
-            skipSonarReportGeneration = skipReportGeneration
+            skipSonarReportGeneration = skipReportGeneration,
+            sonarGradleTask = sonarGradleTask
         )
     }
 
@@ -150,5 +153,7 @@ class SonarParametersCalculator(
         private const val TC_PULL_REQUEST_NUMBER_PARAM = "%teamcity.pullRequest.number%"
         private const val TC_PULL_REQUEST_SOURCE_BRANCH_PARAM = "%teamcity.pullRequest.source.branch%"
         private const val TC_PULL_REQUEST_TARGET_BRANCH_PARAM = "%teamcity.pullRequest.target.branch%"
+
+        private const val SONAR_GRADLE_PLUGIN_TASK = "sonar"
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -107,6 +108,50 @@ class SonarExecutionResolver(
         }
 
         return false
+    }
+
+    fun skipSonarGradlePluginExecution(componentName: String, componentVersion: String): Boolean {
+        if (componentName in appliedSastComponents) {
+            logger.info("$componentName is in applied-sast.json - skipping")
+            return true
+        }
+
+        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
+            logger.info("$componentName is a documentation component - skipping")
+            return true
+        }
+
+        val component = crsClient.getDetailedComponent(componentName, componentVersion)
+
+        if (component.archived) {
+            logger.info("$componentName is archived - skipping")
+            return true
+        }
+
+        if (component.labels.contains("test-component")) {
+            logger.info("$componentName is labelled test-component - skipping")
+            return true
+        }
+
+        if (component.buildSystem != BuildSystem.GRADLE) {
+            logger.info("$componentName is not a Gradle component - skipping Gradle plugin execution")
+            return true
+        }
+
+        val isJavaOrKotlin = component.labels.contains("java") || component.labels.contains("kotlin")
+
+        if (!isJavaOrKotlin) {
+            return true
+        }
+
+        val isModernJava = component.buildParameters?.javaVersion == "17" || component.buildParameters?.javaVersion == "21"
+        val isMismatchComponent = componentName in mismatchJavaVersionComponents
+
+        if (isModernJava || isMismatchComponent) {
+            return false
+        }
+
+        return true
     }
 
     companion object {
