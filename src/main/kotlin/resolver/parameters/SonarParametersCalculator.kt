@@ -56,8 +56,8 @@ class SonarParametersCalculator(
         val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
         val pluginBuildSystem = sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion)
         val sonarPluginTask = when (pluginBuildSystem) {
-            BuildSystem.GRADLE -> SONAR_GRADLE_PLUGIN_TASK
-            BuildSystem.MAVEN -> SONAR_MAVEN_PLUGIN_TASK
+            BuildSystem.GRADLE -> SONAR_GRADLE_TASK
+            BuildSystem.MAVEN -> SONAR_MAVEN_TASK
             else -> ""
         }
 
@@ -159,7 +159,7 @@ class SonarParametersCalculator(
         private const val TC_PULL_REQUEST_SOURCE_BRANCH_PARAM = "%teamcity.pullRequest.source.branch%"
         private const val TC_PULL_REQUEST_TARGET_BRANCH_PARAM = "%teamcity.pullRequest.target.branch%"
 
-        private const val SONAR_GRADLE_PLUGIN_TASK = "sonar"
-        private const val SONAR_MAVEN_PLUGIN_TASK = "sonar:sonar"
+        private const val SONAR_GRADLE_TASK = "sonar"
+        private const val SONAR_MAVEN_TASK = "sonar:sonar"
     }
 }

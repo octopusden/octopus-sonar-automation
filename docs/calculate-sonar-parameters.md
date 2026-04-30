@@ -40,7 +40,7 @@ Components with SonarQube analysis already set up manually are supported via con
 | `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                      |
 | `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                      |
 | `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                          |
-| `SONAR_PLUGIN_TASK`               | `sonar` for Gradle, `sonar:sonar` for Maven, empty otherwise           |
+| `SONAR_TASK`                      | `sonar` for Gradle, `sonar:sonar` for Maven, empty otherwise           |
 
 ---
 
@@ -98,9 +98,9 @@ Report generation is **skipped** when any of the following hold:
 - Component is archived
 - Component is labelled `test-component`
 
-### Sonar Plugin Task (`SONAR_PLUGIN_TASK`)
+### Sonar Task (`SONAR_TASK`)
 
-The `SONAR_PLUGIN_TASK` parameter is resolved based on the component's build system:
+The `SONAR_TASK` parameter is resolved based on the component's build system:
 
 | Build System | Task          |
 |--------------|---------------|
@@ -122,13 +122,13 @@ Otherwise it is set to an **empty string**.
 This parameter can be composed into build-tool task parameters. For example, in a Gradle `GRADLE_TASK` parameter:
 
 ```text
-build %SONAR_PLUGIN_TASK% publish
+build %SONAR_TASK% publish
 ```
 
 Or in a Maven goals parameter:
 
 ```text
-clean install %SONAR_PLUGIN_TASK%
+clean install %SONAR_TASK%
 ```
 
 ---
