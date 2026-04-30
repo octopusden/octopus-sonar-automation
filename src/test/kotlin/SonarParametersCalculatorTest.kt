@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -70,7 +71,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns true
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns BuildSystem.GRADLE
 
         val result = calculator.calculate()
 
@@ -87,7 +88,7 @@ class SonarParametersCalculatorTest {
         assertEquals(SonarServerParametersDTO.COMMUNITY.token, result.sonarServerToken)
         assertFalse(result.skipSonarMetarunnerExecution)
         assertTrue(result.skipSonarReportGeneration)
-        assertEquals("sonar", result.sonarGradleTask)
+        assertEquals("sonar", result.sonarPluginTask)
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) }
     }
@@ -100,7 +101,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.DEVELOPER
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns true
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns null
 
         val result = calculator.calculate()
 
@@ -130,7 +131,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns true
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns true
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns null
 
         val result = calculator.calculate()
 
@@ -156,7 +157,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns true
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns null
 
         val result = calculator.calculate()
 
@@ -179,7 +180,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns true
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns null
 
         val result = calculator.calculate()
 
@@ -210,7 +211,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns BuildSystem.GRADLE
 
         val result = calculator.calculate()
 
@@ -220,6 +221,39 @@ class SonarParametersCalculatorTest {
             SonarParameterBuilder.forBranch("main", "main"),
             result.sonarExtraParameters
         )
+        assertEquals("sonar", result.sonarPluginTask)
+    }
+
+    @Test
+    fun `maven component produces sonar colon sonar plugin task`() {
+        val resolvedVcs = resolvedVcs(branch = "main")
+        every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
+        every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
+        every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
+        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns BuildSystem.MAVEN
+
+        val result = calculator.calculate()
+
+        assertEquals("sonar:sonar", result.sonarPluginTask)
+    }
+
+    @Test
+    fun `skipped plugin produces empty plugin task`() {
+        val resolvedVcs = resolvedVcs(branch = "main")
+        every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
+        every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
+        every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
+        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns null
+
+        val result = calculator.calculate()
+
+        assertEquals("", result.sonarPluginTask)
     }
 
     @Test
@@ -231,7 +265,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.DEVELOPER
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns BuildSystem.GRADLE
 
         val result = calculator.calculate()
 
@@ -254,7 +288,7 @@ class SonarParametersCalculatorTest {
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
-        every { sonarExecutionResolver.skipSonarGradlePluginExecution("my-component", "1.0.0") } returns false
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns BuildSystem.GRADLE
 
         val result = calculator.calculate()
 

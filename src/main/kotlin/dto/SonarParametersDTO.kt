@@ -20,7 +20,8 @@ package org.octopusden.octopus.sonar.dto
  *                                     Empty when applied-SAST override is used.
  * @param skipSonarMetarunnerExecution Whether the Sonar metarunner step should be skipped entirely.
  * @param skipSonarReportGeneration    Whether the Sonar report generation step should be skipped.
- * @param sonarGradleTask              The Gradle task to run for Sonar analysis (`sonar` when applicable, empty otherwise).
+ * @param sonarPluginTask              The build-tool task for Sonar analysis (`sonar` for Gradle,
+ *                                     `sonar:sonar` for Maven, empty otherwise).
  */
 data class SonarParametersDTO(
     val sonarProjectKey: String,
@@ -33,5 +34,5 @@ data class SonarParametersDTO(
     val sonarExtraParameters: String,
     val skipSonarMetarunnerExecution: Boolean,
     val skipSonarReportGeneration: Boolean,
-    val sonarGradleTask: String
+    val sonarPluginTask: String
 )

@@ -40,7 +40,7 @@ Components with SonarQube analysis already set up manually are supported via con
 | `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                      |
 | `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                      |
 | `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                          |
-| `SONAR_GRADLE_TASK`               | `sonar` if the Gradle SonarQube plugin should run, empty otherwise     |
+| `SONAR_PLUGIN_TASK`               | `sonar` for Gradle, `sonar:sonar` for Maven, empty otherwise           |
 
 ---
 
@@ -98,23 +98,37 @@ Report generation is **skipped** when any of the following hold:
 - Component is archived
 - Component is labelled `test-component`
 
-### Sonar Gradle Task (`SONAR_GRADLE_TASK`)
+### Sonar Plugin Task (`SONAR_PLUGIN_TASK`)
 
-The `SONAR_GRADLE_TASK` parameter is set to `sonar` when **all** of the following conditions are met:
+The `SONAR_PLUGIN_TASK` parameter is resolved based on the component's build system:
+
+| Build System | Task          |
+|--------------|---------------|
+| Gradle       | `sonar`       |
+| Maven        | `sonar:sonar` |
+| Other/skip   | _(empty)_     |
+
+The plugin task is set (non-empty) only when **all** of the following conditions are met:
 - Component is **not** in `applied-sast.json`
 - Component is **not** a documentation component
 - Component is **not** archived
 - Component is **not** labelled `test-component`
-- Component uses the **Gradle** build system
+- Component uses the **Gradle** or **Maven** build system
 - Component is labelled `java` or `kotlin`
 - Component uses Java version **17** or **21**, or is listed in `mismatch-java-version.txt`
 
 Otherwise it is set to an **empty string**.
 
-This parameter can be composed into the `GRADLE_TASK` TeamCity parameter so that the Sonar Gradle plugin task is included only when applicable. For example:
+This parameter can be composed into build-tool task parameters. For example, in a Gradle `GRADLE_TASK` parameter:
 
 ```text
-build %SONAR_GRADLE_TASK% publish
+build %SONAR_PLUGIN_TASK% publish
+```
+
+Or in a Maven goals parameter:
+
+```text
+clean install %SONAR_PLUGIN_TASK%
 ```
 
 ---

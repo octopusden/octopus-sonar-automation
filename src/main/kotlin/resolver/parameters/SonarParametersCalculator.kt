@@ -6,6 +6,7 @@ import org.octopusden.octopus.sonar.dto.SonarParametersDTO
 import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
 import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
 import org.octopusden.octopus.sonar.util.SonarParameterBuilder
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
 import java.nio.file.Path
@@ -53,8 +54,12 @@ class SonarParametersCalculator(
         val sonarServer = sonarServerResolver.resolveSonarServer(componentName)
         val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
         val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
-        val skipGradlePlugin = sonarExecutionResolver.skipSonarGradlePluginExecution(componentName, componentVersion)
-        val sonarGradleTask = if (skipGradlePlugin) "" else SONAR_GRADLE_PLUGIN_TASK
+        val pluginBuildSystem = sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion)
+        val sonarPluginTask = when (pluginBuildSystem) {
+            BuildSystem.GRADLE -> SONAR_GRADLE_PLUGIN_TASK
+            BuildSystem.MAVEN -> SONAR_MAVEN_PLUGIN_TASK
+            else -> ""
+        }
 
         return SonarParametersDTO(
             sonarProjectKey = projectContext.projectKey,
@@ -67,7 +72,7 @@ class SonarParametersCalculator(
             sonarServerToken = sonarServer.token,
             skipSonarMetarunnerExecution = skipMetarunnerExecution,
             skipSonarReportGeneration = skipReportGeneration,
-            sonarGradleTask = sonarGradleTask
+            sonarPluginTask = sonarPluginTask
         )
     }
 
@@ -155,5 +160,6 @@ class SonarParametersCalculator(
         private const val TC_PULL_REQUEST_TARGET_BRANCH_PARAM = "%teamcity.pullRequest.target.branch%"
 
         private const val SONAR_GRADLE_PLUGIN_TASK = "sonar"
+        private const val SONAR_MAVEN_PLUGIN_TASK = "sonar:sonar"
     }
 }
