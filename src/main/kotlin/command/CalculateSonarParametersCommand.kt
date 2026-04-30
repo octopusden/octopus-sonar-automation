@@ -77,6 +77,7 @@ class CalculateSonarParametersCommand : CliktCommand(
         setTeamcityParameter(SONAR_EXTRA_PARAMETERS_PARAMETER, params.sonarExtraParameters)
         setTeamcityParameter(SKIP_SONAR_METARUNNER_EXECUTION_PARAMETER, params.skipSonarMetarunnerExecution.toString())
         setTeamcityParameter(SKIP_SONAR_REPORT_GENERATION_PARAMETER, params.skipSonarReportGeneration.toString())
+        setTeamcityParameter(SONAR_GRADLE_TASK_PARAMETER, params.sonarGradleTask)
     }
 
     private fun setTeamcityParameter(name: String, value: String) {
@@ -105,5 +106,6 @@ class CalculateSonarParametersCommand : CliktCommand(
         const val SONAR_EXTRA_PARAMETERS_PARAMETER = "SONAR_EXTRA_PARAMETERS"
         const val SKIP_SONAR_METARUNNER_EXECUTION_PARAMETER = "SKIP_SONAR_METARUNNER_EXECUTION"
         const val SKIP_SONAR_REPORT_GENERATION_PARAMETER = "SKIP_SONAR_REPORT_GENERATION"
+        const val SONAR_GRADLE_TASK_PARAMETER = "SONAR_GRADLE_TASK"
     }
 }
