@@ -89,7 +89,7 @@ The metarunner scan is **skipped** when any of the following hold:
 - Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
 - Component is archived
 - Component is labelled `test-component`
-- Java/Kotlin component using JDK 17/21 or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
+- Java/Kotlin component using a **Gradle or Maven** build system and JDK 17/21 or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
 
 ### Skip Sonar Report Generation
 

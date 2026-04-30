@@ -196,6 +196,14 @@ class SonarExecutionResolverTest {
         assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
     }
 
+    @Test
+    fun `metarunner not skipped for java component with modern javaVersion but non-plugin-eligible build system`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "17", buildSystem = BuildSystem.PROVIDED
+        )
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     // skipSonarReportGeneration
     // ════════════════════════════════════════════════════════════════════════

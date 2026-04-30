@@ -43,9 +43,9 @@ class SonarExecutionResolver(
      * - Component name starts with `doc-` or `doc_` (case-insensitive) or is listed in `other-doc-components.txt`
      * - Component is archived
      * - Component is labelled `test-component`
-     * - Component uses Java or Kotlin **and** either its `javaVersion` build parameter is `17` or `21`,
-     *   or it is listed in `mismatch-java-version.txt` - those components are handled by
-     *   the Gradle/Maven Sonar plugins
+     * - Component uses Java or Kotlin **and** uses a Gradle or Maven build system **and** either
+     *   its `javaVersion` build parameter is `17` or `21`, or it is listed in
+     *   `mismatch-java-version.txt` - those components are handled by the Gradle/Maven Sonar plugins
      */
     fun skipSonarMetarunnerExecution(componentName: String, componentVersion: String): Boolean {
         skipIfAppliedSast(componentName)?.let { return it }
@@ -57,9 +57,11 @@ class SonarExecutionResolver(
 
         val isJavaOrKotlin = component.isJavaOrKotlin()
         val isModernOrMismatch = component.isModernJava() || componentName in mismatchJavaVersionComponents
+        val isPluginEligibleBuildSystem =
+            component.buildSystem == BuildSystem.GRADLE || component.buildSystem == BuildSystem.MAVEN
 
-        if (isJavaOrKotlin && isModernOrMismatch) {
-            logger.info("$componentName uses java/kotlin - skipping (handled by Gradle/Maven plugins)")
+        if (isPluginEligibleBuildSystem && isJavaOrKotlin && isModernOrMismatch) {
+            logger.info("$componentName uses java/kotlin with ${component.buildSystem} - skipping (handled by Gradle/Maven plugins)")
             return true
         }
 
