@@ -88,7 +88,7 @@ class SonarParametersCalculatorTest {
         assertEquals(SonarServerParametersDTO.COMMUNITY.token, result.sonarServerToken)
         assertFalse(result.skipSonarMetarunnerExecution)
         assertTrue(result.skipSonarReportGeneration)
-        assertEquals("sonar", result.sonarPluginTask)
+        assertEquals("%SONAR_GRADLE_TASK%", result.sonarPluginTask)
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) }
     }
@@ -221,11 +221,11 @@ class SonarParametersCalculatorTest {
             SonarParameterBuilder.forBranch("main", "main"),
             result.sonarExtraParameters
         )
-        assertEquals("sonar", result.sonarPluginTask)
+        assertEquals("%SONAR_GRADLE_TASK%", result.sonarPluginTask)
     }
 
     @Test
-    fun `maven component produces sonar colon sonar plugin task`() {
+    fun `maven component produces sonar maven goal reference task`() {
         val resolvedVcs = resolvedVcs(branch = "main")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
@@ -237,7 +237,7 @@ class SonarParametersCalculatorTest {
 
         val result = calculator.calculate()
 
-        assertEquals("sonar:sonar", result.sonarPluginTask)
+        assertEquals("%SONAR_MAVEN_GOAL%", result.sonarPluginTask)
     }
 
     @Test
