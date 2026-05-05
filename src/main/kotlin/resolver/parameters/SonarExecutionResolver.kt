@@ -43,9 +43,9 @@ class SonarExecutionResolver(
      * - Component name starts with `doc-` or `doc_` (case-insensitive) or is listed in `other-doc-components.txt`
      * - Component is archived
      * - Component is labelled `test-component`
-     * - Component uses Java or Kotlin **and** either its `javaVersion` build parameter is `17` or `21`,
-     *   or it is listed in `mismatch-java-version.txt` - those components are handled by
-     *   the Gradle/Maven Sonar plugins
+     * - Component uses Java or Kotlin **and** uses a Gradle or Maven build system **and** either
+     *   its `javaVersion` build parameter is `17` or `21`, or it is listed in
+     *   `mismatch-java-version.txt` - those components are handled by the Gradle/Maven Sonar plugins
      */
     fun skipSonarMetarunnerExecution(componentName: String, componentVersion: String): Boolean {
         skipIfAppliedSast(componentName)?.let { return it }
@@ -57,9 +57,11 @@ class SonarExecutionResolver(
 
         val isJavaOrKotlin = component.isJavaOrKotlin()
         val isModernOrMismatch = component.isModernJava() || componentName in mismatchJavaVersionComponents
+        val isPluginEligibleBuildSystem =
+            component.buildSystem == BuildSystem.GRADLE || component.buildSystem == BuildSystem.MAVEN
 
-        if (isJavaOrKotlin && isModernOrMismatch) {
-            logger.info("$componentName uses java/kotlin - skipping (handled by Gradle/Maven plugins)")
+        if (isPluginEligibleBuildSystem && isJavaOrKotlin && isModernOrMismatch) {
+            logger.info("$componentName uses java/kotlin with ${component.buildSystem} - skipping (handled by Gradle/Maven plugins)")
             return true
         }
 
@@ -84,29 +86,44 @@ class SonarExecutionResolver(
         return false
     }
 
-    fun skipSonarGradlePluginExecution(componentName: String, componentVersion: String): Boolean {
-        skipIfAppliedSast(componentName)?.let { return it }
-        skipIfDoc(componentName)?.let { return it }
+    /**
+     * Determines whether the Sonar build-tool plugin (Gradle or Maven) should run.
+     *
+     * Returns the [BuildSystem] (`GRADLE` or `MAVEN`) when the plugin **should** run,
+     * or `null` when execution should be **skipped**.
+     *
+     * The plugin runs only when **all** of the following hold:
+     * - Component is not in `applied-sast.json`
+     * - Component is not a documentation component
+     * - Component is not archived or labelled `test-component`
+     * - Component uses the **Gradle** or **Maven** build system
+     * - Component is labelled `java` or `kotlin`
+     * - Component uses Java 17/21 or is listed in `mismatch-java-version.txt`
+     */
+    fun resolveSonarPluginBuildSystem(componentName: String, componentVersion: String): BuildSystem? {
+        skipIfAppliedSast(componentName)?.let { return null }
+        skipIfDoc(componentName)?.let { return null }
 
         val component = crsClient.getDetailedComponent(componentName, componentVersion)
 
-        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return it }
+        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return null }
 
-        if (component.buildSystem != BuildSystem.GRADLE) {
-            logger.info("$componentName is not a Gradle component - skipping Gradle plugin execution")
-            return true
+        val buildSystem = component.buildSystem
+        if (buildSystem != BuildSystem.GRADLE && buildSystem != BuildSystem.MAVEN) {
+            logger.info("$componentName uses $buildSystem - skipping Sonar plugin execution")
+            return null
         }
 
         if (!component.isJavaOrKotlin()) {
-            logger.info("$componentName is not java/kotlin - skipping Gradle plugin execution")
-            return true
+            logger.info("$componentName is not java/kotlin - skipping Sonar plugin execution")
+            return null
         }
 
         if (component.isModernJava() || componentName in mismatchJavaVersionComponents) {
-            return false
+            return buildSystem
         }
 
-        return true
+        return null
     }
 
     private fun skipIfAppliedSast(componentName: String): Boolean? {

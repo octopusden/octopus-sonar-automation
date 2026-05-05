@@ -20,7 +20,7 @@
         * SONAR_EXTRA_PARAMETERS
         * SKIP_SONAR_METARUNNER_EXECUTION
         * SKIP_SONAR_REPORT_GENERATION
-        * SONAR_GRADLE_TASK
+        * SONAR_TASK
     </description>
     <settings>
         <parameters>

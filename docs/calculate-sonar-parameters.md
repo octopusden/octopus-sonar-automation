@@ -28,19 +28,19 @@ Components with SonarQube analysis already set up manually are supported via con
 
 ## Output Parameters
 
-| Parameter                         | Description                                                            |
-|-----------------------------------|------------------------------------------------------------------------|
-| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT_NAME>`                     |
-| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT_NAME>`                     |
-| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                            |
-| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                                |
-| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)             |
-| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)            |
-| `SONAR_SERVER_TOKEN`              | Authentication token for the SonarQube server (TC parameter reference) |
-| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                      |
-| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                      |
-| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                          |
-| `SONAR_GRADLE_TASK`               | `sonar` if the Gradle SonarQube plugin should run, empty otherwise     |
+| Parameter                         | Description                                                                                                        |
+|-----------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT_NAME>`                                                                 |
+| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT_NAME>`                                                                 |
+| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                                                                        |
+| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                                                                            |
+| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)                                                         |
+| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)                                                        |
+| `SONAR_SERVER_TOKEN`              | Authentication token for the SonarQube server (TC parameter reference)                                             |
+| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                                                                  |
+| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                                                                  |
+| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                                                                      |
+| `SONAR_TASK`                      | Reference to TeamCity parameter, `%SONAR_GRADLE_TASK%` for Gradle, `%SONAR_MAVEN_GOAL%` for Maven, empty otherwise |
 
 ---
 
@@ -89,7 +89,7 @@ The metarunner scan is **skipped** when any of the following hold:
 - Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
 - Component is archived
 - Component is labelled `test-component`
-- Java/Kotlin component using JDK 17/21 or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
+- Java/Kotlin component using a **Gradle or Maven** build system and JDK 17/21 or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
 
 ### Skip Sonar Report Generation
 
@@ -98,23 +98,37 @@ Report generation is **skipped** when any of the following hold:
 - Component is archived
 - Component is labelled `test-component`
 
-### Sonar Gradle Task (`SONAR_GRADLE_TASK`)
+### Sonar Task (`SONAR_TASK`)
 
-The `SONAR_GRADLE_TASK` parameter is set to `sonar` when **all** of the following conditions are met:
+The `SONAR_TASK` parameter is resolved based on the component's build system:
+
+| Build System | Task                                                                                                    |
+|--------------|---------------------------------------------------------------------------------------------------------|
+| Gradle       | `%SONAR_GRADLE_TASK%`, example value: `sonar`                                                           |
+| Maven        | `%SONAR_MAVEN_GOAL%`, example value: `org.sonarsource.scanner.maven:sonar-maven-plugin:{version}:sonar` |
+| Other/skip   | _(empty)_                                                                                               |
+
+The plugin task is set (non-empty) only when **all** of the following conditions are met:
 - Component is **not** in `applied-sast.json`
 - Component is **not** a documentation component
 - Component is **not** archived
 - Component is **not** labelled `test-component`
-- Component uses the **Gradle** build system
+- Component uses the **Gradle** or **Maven** build system
 - Component is labelled `java` or `kotlin`
 - Component uses Java version **17** or **21**, or is listed in `mismatch-java-version.txt`
 
 Otherwise it is set to an **empty string**.
 
-This parameter can be composed into the `GRADLE_TASK` TeamCity parameter so that the Sonar Gradle plugin task is included only when applicable. For example:
+This parameter can be composed into build-tool task parameters. For example, in a Gradle `GRADLE_TASK` parameter:
 
 ```text
-build %SONAR_GRADLE_TASK% publish
+build %SONAR_TASK% publish
+```
+
+Or in a Maven goals parameter:
+
+```text
+clean install %SONAR_TASK%
 ```
 
 ---

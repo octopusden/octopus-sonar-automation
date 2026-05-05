@@ -60,22 +60,29 @@ When using the [Gradle SonarQube plugin](https://docs.sonarsource.com/sonarqube/
 ./gradlew sonar %SONAR_PARAMETERS%
 ```
 
-#### `SONAR_GRADLE_TASK`
+#### `SONAR_TASK`
 
-The `CalculateSonarParameters` metarunner also sets `SONAR_GRADLE_TASK`. This parameter is set to `sonar` when the component uses the Gradle build system, is Java/Kotlin-based, and uses a modern Java version (17 or 21, including components in the mismatch-java-version list). Otherwise, it is set to an empty string.
+The `CalculateSonarParameters` metarunner also sets `SONAR_TASK`. This parameter is set to reference to TeamCity parameter, `%SONAR_GRADLE_TASK%` for Gradle components and `%SONAR_MAVEN_GOAL%` for Maven components, when the component is Java/Kotlin-based and uses a modern Java version (17 or 21, including components in the mismatch-java-version list). Otherwise, it is set to an empty string.
 
 This allows composing it into the default `GRADLE_TASK` TeamCity parameter so that the Sonar analysis task is included only when applicable:
 
 ```text
-build %SONAR_GRADLE_TASK% publish
+build %SONAR_TASK% publish
 ```
 
-When `SONAR_GRADLE_TASK` is empty the command becomes `build  publish`, which Gradle handles normally.
+When `SONAR_TASK` is empty the command becomes `build  publish`, which Gradle handles normally.
 
 ### 3. Maven SonarQube Plugin
 
 When using the [Maven SonarQube plugin](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner-for-maven/), pass `SONAR_PARAMETERS` as system properties on the Maven command line:
 
 ```bash
-mvn sonar:sonar %SONAR_PARAMETERS%
+mvn org.sonarsource.scanner.maven:sonar-maven-plugin:{version}:sonar %SONAR_PARAMETERS%
 ```
+
+Similarly, `SONAR_TASK` can be composed into Maven goals:
+
+```text
+clean install %SONAR_TASK%
+```
+
