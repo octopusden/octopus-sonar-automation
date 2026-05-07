@@ -15,14 +15,15 @@ The metarunner's `additionalParameters` contains:
 ```text
 -Dsonar.projectKey=%SONAR_PROJECT_KEY%
 -Dsonar.projectName=%SONAR_PROJECT_NAME%
--Dsonar.projectVersion=%SONAR_PROJECT_VERSION%
+-Dsonar.projectVersion=%BUILD_VERSION%
 -Dsonar.host.url=%SONAR_SERVER_URL%
 -Dsonar.token=%SONAR_SERVER_TOKEN%
 %SONAR_RUNNER_EXTRA_PARAMETERS%
 %SONAR_PROJECT_EXTRA_PARAMETERS%
 ```
 
-- `SONAR_PROJECT_KEY`, `SONAR_PROJECT_NAME`, `SONAR_PROJECT_VERSION`, `SONAR_SERVER_URL`, `SONAR_SERVER_TOKEN` are set by `CalculateSonarParameters` based on the component being analyzed. 
+- `SONAR_PROJECT_KEY`, `SONAR_PROJECT_NAME`, `SONAR_SERVER_URL`, `SONAR_SERVER_TOKEN` are set by `CalculateSonarParameters` based on the component being analyzed. 
+- `BUILD_VERSION` is a standard TeamCity parameter representing the current build version.
 - `SONAR_RUNNER_EXTRA_PARAMETERS` are set by `CalculateSonarParameters` which includes branch/pr related parameters.
 - `SONAR_PROJECT_EXTRA_PARAMETERS` is a placeholder for any additional parameters that may be needed for specific projects language or structure.
 

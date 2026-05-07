@@ -27,10 +27,11 @@
                 <parameters>
                     <param name="additionalParameters"><![CDATA[-Dsonar.projectKey=%SONAR_PROJECT_KEY%
 -Dsonar.projectName=%SONAR_PROJECT_NAME%
--Dsonar.projectVersion=%SONAR_PROJECT_VERSION%
+-Dsonar.projectVersion=%BUILD_VERSION%
 -Dsonar.host.url=%SONAR_SERVER_URL%
 -Dsonar.token=%SONAR_SERVER_TOKEN%
-%SONAR_RUNNER_EXTRA_PARAMETERS%]]></param>
+%SONAR_RUNNER_EXTRA_PARAMETERS%
+%SONAR_PROJECT_EXTRA_PARAMATERS%]]></param>
                     <param name="sonarProjectSources" value="%SONAR_PROJECT_SOURCES%" />
                     <param name="sonarProjectBinaries" value="%SONAR_PROJECT_BINARIES%" />
                     <param name="sonarProjectModules" value="%SONAR_PROJECT_MODULES%" />
