@@ -3,6 +3,7 @@ package org.octopusden.octopus.sonar.test
 import io.mockk.every
 import io.mockk.mockk
 import org.octopusden.octopus.components.registry.core.dto.BuildParametersDTO
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.components.registry.core.dto.ComponentV1
 import org.octopusden.octopus.components.registry.core.dto.DetailedComponent
 import org.octopusden.octopus.components.registry.core.dto.RepositoryType
@@ -34,10 +35,12 @@ object Fixtures {
     fun detailedComponent(
         labels: Set<String> = emptySet(),
         archived: Boolean = false,
-        javaVersion: String? = null
+        javaVersion: String? = null,
+        buildSystem: BuildSystem = BuildSystem.GRADLE
     ): DetailedComponent = mockk<DetailedComponent>().also { dc ->
         every { dc.labels } returns labels
         every { dc.archived } returns archived
+        every { dc.buildSystem } returns buildSystem
         val bp = mockk<BuildParametersDTO>().also { every { it.javaVersion } returns javaVersion }
         every { dc.buildParameters } returns bp
     }

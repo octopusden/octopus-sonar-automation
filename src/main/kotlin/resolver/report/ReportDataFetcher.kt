@@ -44,7 +44,7 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         var page = 1
         var effortTotal = 0
 
-        while (true) {
+        while (page <= MAX_PAGES) {
             val response = sonarClient.searchIssues(projectKey, branch, resolved = false, ps = PAGE_SIZE, p = page)
             allIssues.addAll(response.issues)
 

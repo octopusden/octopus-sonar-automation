@@ -71,6 +71,12 @@ class TargetBranchResolver(
                 continue
             }
 
+            // Evaluate ALL non-skipped candidates within this window and pick the one whose
+            // shared commit appears closest to the tip of the source branch (lowest index).
+            // Candidate order is used only as a tie-breaker.
+            var bestCandidate: String? = null
+            var bestIndex: Int = Int.MAX_VALUE
+
             for (candidate in candidates) {
                 if (candidate in skippedCandidates) continue
                 logger.debug("Evaluating candidate '{}' with {} days window", candidate, windowDays)
@@ -93,11 +99,23 @@ class TargetBranchResolver(
                     continue
                 }
 
-                val commonHash = sourceBranchHashes.firstOrNull { it in candidateHashes }
-                if (commonHash != null) {
-                    logger.info("'{}' diverged from '{}' at commit {}", commit.branch, candidate, commonHash)
-                    return candidate
+                val commonIndex = sourceBranchHashes.indexOfFirst { it in candidateHashes }
+                if (commonIndex != -1 && commonIndex < bestIndex) {
+                    bestIndex = commonIndex
+                    bestCandidate = candidate
+                    logger.debug(
+                        "'{}' is currently the best candidate for '{}' (shared commit index {})",
+                        candidate, commit.branch, commonIndex,
+                    )
                 }
+            }
+
+            if (bestCandidate != null) {
+                logger.info(
+                    "'{}' diverged from '{}' (closest shared commit index {} in {}-day window)",
+                    commit.branch, bestCandidate, bestIndex, windowDays,
+                )
+                return bestCandidate
             }
         }
 

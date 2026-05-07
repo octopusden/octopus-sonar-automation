@@ -3,7 +3,10 @@ package org.octopusden.octopus.sonar.resolver.parameters
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
 import org.octopusden.octopus.sonar.dto.SonarParametersDTO
+import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
+import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
 import org.octopusden.octopus.sonar.util.SonarParameterBuilder
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
 import java.nio.file.Path
@@ -51,6 +54,12 @@ class SonarParametersCalculator(
         val sonarServer = sonarServerResolver.resolveSonarServer(componentName)
         val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
         val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
+        val pluginBuildSystem = sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion)
+        val sonarPluginTask = when (pluginBuildSystem) {
+            BuildSystem.GRADLE -> SONAR_GRADLE_TASK
+            BuildSystem.MAVEN -> SONAR_MAVEN_GOAL
+            else -> ""
+        }
 
         return SonarParametersDTO(
             sonarProjectKey = projectContext.projectKey,
@@ -60,8 +69,10 @@ class SonarParametersCalculator(
             sonarExtraParameters = branchContext.sonarExtraParameters,
             sonarServerId = sonarServer.id,
             sonarServerUrl = sonarServer.url,
+            sonarServerToken = sonarServer.token,
             skipSonarMetarunnerExecution = skipMetarunnerExecution,
-            skipSonarReportGeneration = skipReportGeneration
+            skipSonarReportGeneration = skipReportGeneration,
+            sonarPluginTask = sonarPluginTask
         )
     }
 
@@ -144,10 +155,11 @@ class SonarParametersCalculator(
     )
 
     companion object {
-        private const val PULL_REQUEST_BRANCH_MARKER = "pull-requests/"
         private const val TC_PULL_REQUEST_NUMBER_PARAM = "%teamcity.pullRequest.number%"
         private const val TC_PULL_REQUEST_SOURCE_BRANCH_PARAM = "%teamcity.pullRequest.source.branch%"
         private const val TC_PULL_REQUEST_TARGET_BRANCH_PARAM = "%teamcity.pullRequest.target.branch%"
-        private val DEFAULT_BRANCH_CANDIDATES = listOf("main", "master")
+
+        private const val SONAR_GRADLE_TASK = "%SONAR_GRADLE_TASK%"
+        private const val SONAR_MAVEN_GOAL = "%SONAR_MAVEN_GOAL%"
     }
 }

@@ -1,6 +1,7 @@
 package org.octopusden.octopus.sonar.resolver.report
 
 import org.octopusden.octopus.sonar.dto.QualityGateCheckResult
+import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
 import org.octopusden.octopus.sonar.util.TeamCityEscaper
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -30,6 +31,7 @@ class TeamCityNotifier(
 
         val baseUrl = sonarServerUrl.trimEnd('/')
         val branchParam = branchOrPrParam(sourceBranch)
+
         val encodedProjectKey = URLEncoder.encode(projectKey, StandardCharsets.UTF_8)
         val dashboardLink = "$baseUrl/dashboard?id=$encodedProjectKey&$branchParam"
         val newIssuesLink = "$baseUrl/project/issues?inNewCodePeriod=true&id=$encodedProjectKey&$branchParam"
@@ -72,10 +74,10 @@ class TeamCityNotifier(
          * `"pull-requests/123"` → `"pullRequest=123"`, otherwise `"branch=<name>"`.
          */
         fun branchOrPrParam(branch: String): String {
-            return if (branch.startsWith("pull-requests/")) {
-                "pullRequest=${branch.removePrefix("pull-requests/")}"
+            return if (branch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
+                "pullRequest=${URLEncoder.encode(branch.removePrefix(PULL_REQUEST_BRANCH_MARKER), StandardCharsets.UTF_8)}"
             } else {
-                "branch=$branch"
+                "branch=${URLEncoder.encode(branch, StandardCharsets.UTF_8)}"
             }
         }
     }

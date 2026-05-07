@@ -28,17 +28,19 @@ Components with SonarQube analysis already set up manually are supported via con
 
 ## Output Parameters
 
-| Parameter                         | Description                                                    |
-|-----------------------------------|----------------------------------------------------------------|
-| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT>`                  |
-| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT>`                  |
-| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                    |
-| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                        |
-| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                              |
-| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)     |
-| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)    |
-| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped              |
-| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                  |
+| Parameter                         | Description                                                                                                        |
+|-----------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `SONAR_PROJECT_KEY`               | Default: `<BB_PROJECT>_<BB_REPO>_<COMPONENT_NAME>`                                                                 |
+| `SONAR_PROJECT_NAME`              | Default: `<BB_PROJECT>/<BB_REPO>:<COMPONENT_NAME>`                                                                 |
+| `SONAR_SOURCE_BRANCH`             | Branch or PR being analysed                                                                                        |
+| `SONAR_TARGET_BRANCH`             | Branch to compare against (base branch)                                                                            |
+| `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)                                                         |
+| `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)                                                        |
+| `SONAR_SERVER_TOKEN`              | Authentication token for the SonarQube server (TC parameter reference)                                             |
+| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                                                                  |
+| `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                                                                  |
+| `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                                                                      |
+| `SONAR_TASK`                      | Reference to TeamCity parameter, `%SONAR_GRADLE_TASK%` for Gradle, `%SONAR_MAVEN_GOAL%` for Maven, empty otherwise |
 
 ---
 
@@ -57,11 +59,20 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode     | Source Branch                        | Target Branch                                                                                         |
-|----------------|--------------------------------------|-------------------------------------------------------------------------------------------------------|
-| Branch build   | Branch from matched VCS settings     | Resolved via [Target Branch Analysis](#target-branch-analysis)                                        |
-| PR build       | `pull-requests/<PR_NUMBER>` from VCS | `%teamcity.pullRequest.target.branch%`                                                                |
-| `applied-sast` | Branch from matched VCS settings     | Best-effort: source branch if it matches a candidate, otherwise first candidate (no VCS Facade calls) |
+| Build Mode     | Source Branch                                                            | Target Branch                                                                                                                                                                                                                   |
+|----------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                                                                                                                                                  |
+| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                                                                                                                                          |
+| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | Best-effort only (no VCS Facade calls): source branch if it matches a candidate, otherwise first candidate. Not used for Sonar parameters — `SONAR_EXTRA_PARAMETERS` is left empty since legacy config handles branch settings. |
+
+### Sonar Server ID, URL, and Token
+
+Determined by the component's language labels from the Components Registry:
+
+| Language Labels                        | Server Edition       |
+|----------------------------------------|----------------------|
+| `c`, `cpp`, `objective_c`, `swift`     | Developer Edition    |
+| Everything else                        | Community Edition    |
 
 ### Sonar Extra Parameters
 
@@ -71,15 +82,6 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 | Branch build   | `sonar.branch.name` = source branch; `sonar.newCode.referenceBranch` = target branch (omitted when source = target) |
 | `applied-sast` | Empty (handled by legacy config)                                                                                    |
 
-### Sonar Server ID & URL
-
-Determined by the component's language labels from the Components Registry:
-
-| Language Labels                        | Server Edition       |
-|----------------------------------------|----------------------|
-| `c`, `cpp`, `objective_c`, `swift`     | Developer Edition    |
-| Everything else                        | Community Edition    |
-
 ### Skip Sonar Metarunner Execution
 
 The metarunner scan is **skipped** when any of the following hold:
@@ -87,7 +89,7 @@ The metarunner scan is **skipped** when any of the following hold:
 - Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
 - Component is archived
 - Component is labelled `test-component`
-- Java/Kotlin component using JDK 17/21, or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
+- Java/Kotlin component using a **Gradle or Maven** build system and JDK 17/21 or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
 
 ### Skip Sonar Report Generation
 
@@ -95,6 +97,39 @@ Report generation is **skipped** when any of the following hold:
 - Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
 - Component is archived
 - Component is labelled `test-component`
+
+### Sonar Task (`SONAR_TASK`)
+
+The `SONAR_TASK` parameter is resolved based on the component's build system:
+
+| Build System | Task                                                                                                    |
+|--------------|---------------------------------------------------------------------------------------------------------|
+| Gradle       | `%SONAR_GRADLE_TASK%`, example value: `sonar`                                                           |
+| Maven        | `%SONAR_MAVEN_GOAL%`, example value: `org.sonarsource.scanner.maven:sonar-maven-plugin:{version}:sonar` |
+| Other/skip   | _(empty)_                                                                                               |
+
+The plugin task is set (non-empty) only when **all** of the following conditions are met:
+- Component is **not** in `applied-sast.json`
+- Component is **not** a documentation component
+- Component is **not** archived
+- Component is **not** labelled `test-component`
+- Component uses the **Gradle** or **Maven** build system
+- Component is labelled `java` or `kotlin`
+- Component uses Java version **17** or **21**, or is listed in `mismatch-java-version.txt`
+
+Otherwise it is set to an **empty string**.
+
+This parameter can be composed into build-tool task parameters. For example, in a Gradle `GRADLE_TASK` parameter:
+
+```text
+build %SONAR_TASK% publish
+```
+
+Or in a Maven goals parameter:
+
+```text
+clean install %SONAR_TASK%
+```
 
 ---
 
@@ -112,11 +147,13 @@ For **regular branch builds**, the tool must determine which production/release 
 
 2. **Short-circuit**: if the source branch is itself one of the candidate branches (e.g. building `main` directly), it is returned immediately with no VCS Facade calls.
 
-3. **Candidate-first, window-second iteration**:
-   - Candidates are evaluated in the order provided (typically `[main, master]` or the component's default branches).
-   - For each candidate, the resolver tries progressively wider time windows to find a **common commit hash** (the diverge point) between the source branch and that candidate.
-   - As soon as a common commit is found, that candidate is returned immediately — remaining candidates and windows are not checked.
-   - If all windows are exhausted for a candidate without finding a match, the next candidate is tried.
+3. **Window-first, best-candidate-per-window iteration**:
+   - The resolver iterates over progressively wider time windows (outer loop).
+   - For each window, it first fetches the **source branch** commits (cached across windows). If fetching fails, it immediately returns the first candidate as a fallback. If no commits are found in the current window, it skips to the next (wider) window.
+   - Within each window, it evaluates **all non-skipped candidate branches** (inner loop). For each candidate, it fetches the candidate's commits in the same window and finds the first commit hash shared with the source branch. The position of that shared commit in the source-branch history (its index, with index 0 being the most recent commit) is recorded.
+   - After all candidates have been evaluated for the current window, the candidate with the **lowest index** (i.e. the most recent common ancestor, meaning the branch the source diverged from most recently) is selected and returned. Candidate order is used only as a tie-breaker when two candidates share the same index.
+   - If a candidate branch is not found (`NotFoundException`) or any other error occurs fetching its commits, that candidate is **permanently skipped** for all subsequent windows.
+   - If no candidate matches in the current window, the next (wider) window is tried with all non-skipped candidates.
 
 4. **Window growth**:
    - Starts at `initialWindowDays` (default: **10 days**).
@@ -131,7 +168,7 @@ For **regular branch builds**, the tool must determine which production/release 
    |-----------------------------------------------------|-----------------------------|
    | Only one candidate                                  | Returns that candidate      |
    | Source branch is a candidate                        | Returns source branch       |
-   | Common commit found with a candidate                | Returns that candidate      |
+   | Common commit found with a candidate                | Returns closest ancestor    |
    | VCS Facade error fetching source branch commits     | Returns first candidate     |
    | Candidate branch not found (`NotFoundException`)    | Skips candidate, tries next |
    | VCS Facade error fetching candidate commits         | Skips candidate, tries next |
@@ -141,19 +178,29 @@ For **regular branch builds**, the tool must determine which production/release 
 ### Example
 
 ```text
-Source branch: feature/ABC-123
-Candidates:   [main, master]
+Source branch: feature/FIX
+Candidates:   [main, release/1.0]
 
-Candidate "main":
-  Window 10 days:
-    feature/ABC-123 commits: [f3, f2, f1]
-    main commits:            [m5, m4, m3]        → no common hash
-  Window 20 days:
-    feature/ABC-123 commits: [f3, f2, f1, base]
-    main commits:            [m5, m4, m3, base]  → common hash "base" found!
+Commit graph:
+  A -- B -- C -- D -- E        main
+       \
+        R1 -- R2 -- R3         release/1.0
+                      \
+                       F1 -- F2 -- F3    feature/FIX
 
-Result: main  (candidate "master" was never checked)
+Window 10 days (source commits: [F3, F2, F1, R3]):
+  Candidate "main":       no common hash in window
+  Candidate "release/1.0": common hash "R3" at index 3
+
+Window 20 days (source commits: [F3, F2, F1, R3, R2, R1, B, A]):
+  Candidate "main":       common hash "B" at index 6
+  Candidate "release/1.0": common hash "R3" at index 3  ← lower index (closer ancestor)
+
+Best candidate in window: release/1.0 (index 3 < 6)
+Result: release/1.0
 ```
+
+This ensures the most recently diverged branch is always returned, regardless of candidate order.
 
 ---
 

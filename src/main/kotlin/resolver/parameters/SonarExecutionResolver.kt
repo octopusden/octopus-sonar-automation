@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
+import org.octopusden.octopus.components.registry.core.dto.DetailedComponent
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
@@ -23,11 +25,10 @@ class SonarExecutionResolver(
     private val crsClient: ComponentsRegistryServiceClient,
     configDir: Path,
 ) {
-    private val externalConfigDir: Path = configDir
 
-    private val appliedSastComponents: Map<String, SonarProjectOverride> = loadAppliedSast(externalConfigDir)
-    private val otherDocComponents: Set<String> = loadList(externalConfigDir, OTHER_DOC_FILE)
-    private val mismatchJavaVersionComponents: Set<String> = loadList(externalConfigDir, MISMATCH_JAVA_VERSION_FILE)
+    private val appliedSastComponents: Map<String, SonarProjectOverride> = loadAppliedSast(configDir)
+    private val otherDocComponents: Set<String> = loadList(configDir, OTHER_DOC_FILE)
+    private val mismatchJavaVersionComponents: Set<String> = loadList(configDir, MISMATCH_JAVA_VERSION_FILE)
 
     /**
      * Returns the Sonar project override if the component is in the applied-SAST list, or null otherwise.
@@ -42,39 +43,25 @@ class SonarExecutionResolver(
      * - Component name starts with `doc-` or `doc_` (case-insensitive) or is listed in `other-doc-components.txt`
      * - Component is archived
      * - Component is labelled `test-component`
-     * - Component uses Java or Kotlin **and** either its `javaVersion` build parameter is `17` or `21`,
-     *   or it is listed in `mismatch-java-version.txt` - those components are handled by
-     *   the Gradle/Maven Sonar plugins
+     * - Component uses Java or Kotlin **and** uses a Gradle or Maven build system **and** either
+     *   its `javaVersion` build parameter is `17` or `21`, or it is listed in
+     *   `mismatch-java-version.txt` - those components are handled by the Gradle/Maven Sonar plugins
      */
     fun skipSonarMetarunnerExecution(componentName: String, componentVersion: String): Boolean {
-        if (componentName in appliedSastComponents) {
-            logger.info("$componentName is in applied-sast.json - skipping")
-            return true
-        }
-
-        if (componentName in otherDocComponents || componentName.isDocPrefix()) {
-            logger.info("$componentName is a documentation component - skipping")
-            return true
-        }
+        skipIfAppliedSast(componentName)?.let { return it }
+        skipIfDoc(componentName)?.let { return it }
 
         val component = crsClient.getDetailedComponent(componentName, componentVersion)
 
-        if (component.archived) {
-            logger.info("$componentName is archived - skipping")
-            return true
-        }
+        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return it }
 
-        if (component.labels.contains("test-component")) {
-            logger.info("$componentName is labelled test-component - skipping")
-            return true
-        }
+        val isJavaOrKotlin = component.isJavaOrKotlin()
+        val isModernOrMismatch = component.isModernJava() || componentName in mismatchJavaVersionComponents
+        val isPluginEligibleBuildSystem =
+            component.buildSystem == BuildSystem.GRADLE || component.buildSystem == BuildSystem.MAVEN
 
-        val isJavaOrKotlin = component.labels.contains("java") || component.labels.contains("kotlin")
-        val isModernJava = component.buildParameters?.javaVersion == "17" || component.buildParameters?.javaVersion == "21"
-        val isMismatchComponent = componentName in mismatchJavaVersionComponents
-
-        if (isJavaOrKotlin && (isModernJava || isMismatchComponent)) {
-            logger.info("$componentName uses java/kotlin - skipping (handled by Gradle/Maven plugins)")
+        if (isPluginEligibleBuildSystem && isJavaOrKotlin && isModernOrMismatch) {
+            logger.info("$componentName uses java/kotlin with ${component.buildSystem} - skipping (handled by Gradle/Maven plugins)")
             return true
         }
 
@@ -90,25 +77,88 @@ class SonarExecutionResolver(
      * - Component is labelled `test-component`
      */
     fun skipSonarReportGeneration(componentName: String): Boolean {
+        skipIfDoc(componentName)?.let { return it }
+
+        val component = crsClient.getById(componentName)
+
+        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return it }
+
+        return false
+    }
+
+    /**
+     * Determines whether the Sonar build-tool plugin (Gradle or Maven) should run.
+     *
+     * Returns the [BuildSystem] (`GRADLE` or `MAVEN`) when the plugin **should** run,
+     * or `null` when execution should be **skipped**.
+     *
+     * The plugin runs only when **all** of the following hold:
+     * - Component is not in `applied-sast.json`
+     * - Component is not a documentation component
+     * - Component is not archived or labelled `test-component`
+     * - Component uses the **Gradle** or **Maven** build system
+     * - Component is labelled `java` or `kotlin`
+     * - Component uses Java 17/21 or is listed in `mismatch-java-version.txt`
+     */
+    fun resolveSonarPluginBuildSystem(componentName: String, componentVersion: String): BuildSystem? {
+        skipIfAppliedSast(componentName)?.let { return null }
+        skipIfDoc(componentName)?.let { return null }
+
+        val component = crsClient.getDetailedComponent(componentName, componentVersion)
+
+        skipIfArchivedOrTest(componentName, component.archived, component.labels)?.let { return null }
+
+        val buildSystem = component.buildSystem
+        if (buildSystem != BuildSystem.GRADLE && buildSystem != BuildSystem.MAVEN) {
+            logger.info("$componentName uses $buildSystem - skipping Sonar plugin execution")
+            return null
+        }
+
+        if (!component.isJavaOrKotlin()) {
+            logger.info("$componentName is not java/kotlin - skipping Sonar plugin execution")
+            return null
+        }
+
+        if (component.isModernJava() || componentName in mismatchJavaVersionComponents) {
+            return buildSystem
+        }
+
+        return null
+    }
+
+    private fun skipIfAppliedSast(componentName: String): Boolean? {
+        if (componentName in appliedSastComponents) {
+            logger.info("$componentName is in applied-sast.json - skipping")
+            return true
+        }
+        return null
+    }
+
+    private fun skipIfDoc(componentName: String): Boolean? {
         if (componentName in otherDocComponents || componentName.isDocPrefix()) {
             logger.info("$componentName is a documentation component - skipping")
             return true
         }
+        return null
+    }
 
-        val component = crsClient.getById(componentName)
-
-        if (component.archived) {
+    private fun skipIfArchivedOrTest(componentName: String, archived: Boolean, labels: Set<String>): Boolean? {
+        if (archived) {
             logger.info("$componentName is archived - skipping")
             return true
         }
-
-        if (component.labels.contains("test-component")) {
+        if (labels.contains("test-component")) {
             logger.info("$componentName is labelled test-component - skipping")
             return true
         }
-
-        return false
+        return null
     }
+
+    private fun DetailedComponent.isJavaOrKotlin(): Boolean =
+        labels.contains("java") || labels.contains("kotlin")
+
+    private fun DetailedComponent.isModernJava(): Boolean =
+        buildParameters?.javaVersion == "17" || buildParameters?.javaVersion == "21"
 
     companion object {
         private val logger = LoggerFactory.getLogger(SonarExecutionResolver::class.java)
@@ -149,4 +199,5 @@ class SonarExecutionResolver(
 
 private fun String.isDocPrefix(): Boolean =
     startsWith("doc-", ignoreCase = true) || startsWith("doc_", ignoreCase = true)
+            || endsWith("-doc", ignoreCase = true) || endsWith("_doc", ignoreCase = true)
 

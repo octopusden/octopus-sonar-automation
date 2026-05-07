@@ -85,11 +85,13 @@ class SonarServerResolverTest {
     fun `DEVELOPER instance holds correct TeamCity parameter names`() {
         assertEquals("%SONAR_DEVELOPER_ID%", SonarServerParametersDTO.DEVELOPER.id)
         assertEquals("%SONAR_DEVELOPER_URL%", SonarServerParametersDTO.DEVELOPER.url)
+        assertEquals("%SONAR_DEVELOPER_TOKEN%", SonarServerParametersDTO.DEVELOPER.token)
     }
 
     @Test
     fun `COMMUNITY instance holds correct TeamCity parameter names`() {
         assertEquals("%SONAR_COMMUNITY_ID%", SonarServerParametersDTO.COMMUNITY.id)
         assertEquals("%SONAR_COMMUNITY_URL%", SonarServerParametersDTO.COMMUNITY.url)
+        assertEquals("%SONAR_COMMUNITY_TOKEN%", SonarServerParametersDTO.COMMUNITY.token)
     }
 }

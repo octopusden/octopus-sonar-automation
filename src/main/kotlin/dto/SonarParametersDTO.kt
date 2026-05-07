@@ -13,13 +13,15 @@ package org.octopusden.octopus.sonar.dto
  *                                     pull-request source branch parameter for PR builds).
  * @param sonarTargetBranch            The base branch to compare against (or the TeamCity
  *                                     pull-request target branch parameter for PR builds).
- *                                     Empty when applied-SAST override is used.
  * @param sonarServerId                TeamCity parameter name that holds the Sonar server ID.
  * @param sonarServerUrl               TeamCity parameter name that holds the Sonar server URL.
+ * @param sonarServerToken             TeamCity parameter name that holds the Sonar authentication token.
  * @param sonarExtraParameters         The `-Dsonar.*` flags string passed to the Sonar scanner.
  *                                     Empty when applied-SAST override is used.
  * @param skipSonarMetarunnerExecution Whether the Sonar metarunner step should be skipped entirely.
  * @param skipSonarReportGeneration    Whether the Sonar report generation step should be skipped.
+ * @param sonarPluginTask              The build-tool task for Sonar analysis (`%SONAR_GRADLE_TASK%` for Gradle,
+ *                                     `%SONAR_MAVEN_GOAL%` for Maven, empty otherwise).
  */
 data class SonarParametersDTO(
     val sonarProjectKey: String,
@@ -28,7 +30,9 @@ data class SonarParametersDTO(
     val sonarTargetBranch: String,
     val sonarServerId: String,
     val sonarServerUrl: String,
+    val sonarServerToken: String,
     val sonarExtraParameters: String,
     val skipSonarMetarunnerExecution: Boolean,
-    val skipSonarReportGeneration: Boolean
+    val skipSonarReportGeneration: Boolean,
+    val sonarPluginTask: String
 )

@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import java.nio.file.Files
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -90,6 +91,21 @@ class SonarExecutionResolverTest {
     @Test
     fun `metarunner skipped for component name starting with DOC_ (case-insensitive)`() {
         assertTrue(resolver.skipSonarMetarunnerExecution("DOC_format", "1.0"))
+    }
+
+    @Test
+    fun `metarunner skipped for component name ending with -doc`() {
+        assertTrue(resolver.skipSonarMetarunnerExecution("component-doc", "1.0"))
+    }
+
+    @Test
+    fun `metarunner skipped for component name ending with _doc`() {
+        assertTrue(resolver.skipSonarMetarunnerExecution("component_doc", "1.0"))
+    }
+
+    @Test
+    fun `metarunner skipped for component name ending with -DOC (case-insensitive)`() {
+        assertTrue(resolver.skipSonarMetarunnerExecution("component-DOC", "1.0"))
     }
 
     @Test
@@ -180,6 +196,14 @@ class SonarExecutionResolverTest {
         assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
     }
 
+    @Test
+    fun `metarunner not skipped for java component with modern javaVersion but non-plugin-eligible build system`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "17", buildSystem = BuildSystem.PROVIDED
+        )
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+    }
+
     // ════════════════════════════════════════════════════════════════════════
     // skipSonarReportGeneration
     // ════════════════════════════════════════════════════════════════════════
@@ -194,6 +218,21 @@ class SonarExecutionResolverTest {
     @Test
     fun `report generation skipped for component name starting with doc_`() {
         assertTrue(resolver.skipSonarReportGeneration("doc_api"))
+    }
+
+    @Test
+    fun `report generation skipped for component name ending with -doc`() {
+        assertTrue(resolver.skipSonarReportGeneration("component-doc"))
+    }
+
+    @Test
+    fun `report generation skipped for component name ending with _doc`() {
+        assertTrue(resolver.skipSonarReportGeneration("component_doc"))
+    }
+
+    @Test
+    fun `report generation skipped for component name ending with -DOC (case-insensitive)`() {
+        assertTrue(resolver.skipSonarReportGeneration("component-DOC"))
     }
 
     @Test
@@ -229,6 +268,123 @@ class SonarExecutionResolverTest {
     fun `report generation not skipped for component in applied-sast list`() {
         every { crsClient.getById("component-with-sast") } returns Fixtures.componentV1()
         assertFalse(resolver.skipSonarReportGeneration("component-with-sast"))
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // resolveSonarPluginBuildSystem
+    // ════════════════════════════════════════════════════════════════════════
+
+    // ── should skip (return null) ─────────────────────────────────────────
+
+    @Test
+    fun `plugin skipped for component in applied-sast list`() {
+        assertNull(resolver.resolveSonarPluginBuildSystem("component-with-sast", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for doc component`() {
+        assertNull(resolver.resolveSonarPluginBuildSystem("doc-component", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for other-doc-components list`() {
+        assertNull(resolver.resolveSonarPluginBuildSystem("other-doc-component", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for archived component`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(archived = true)
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for test-component`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("test-component"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for non-gradle non-maven build system`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "17", buildSystem = BuildSystem.PROVIDED
+        )
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for non-java non-kotlin component`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("python"), javaVersion = "17", buildSystem = BuildSystem.GRADLE
+        )
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for java gradle component with old javaVersion not in mismatch list`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "8", buildSystem = BuildSystem.GRADLE
+        )
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `plugin skipped for java maven component with old javaVersion not in mismatch list`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "8", buildSystem = BuildSystem.MAVEN
+        )
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    // ── should return GRADLE ──────────────────────────────────────────────
+
+    @Test
+    fun `returns GRADLE for java gradle component with javaVersion 17`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "17", buildSystem = BuildSystem.GRADLE
+        )
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `returns GRADLE for kotlin gradle component with javaVersion 21`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("kotlin"), javaVersion = "21", buildSystem = BuildSystem.GRADLE
+        )
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `returns GRADLE for java gradle component in mismatch list`() {
+        every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "8", buildSystem = BuildSystem.GRADLE
+        )
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("mismatch-java-component", "1.0"))
+    }
+
+    // ── should return MAVEN ───────────────────────────────────────────────
+
+    @Test
+    fun `returns MAVEN for java maven component with javaVersion 17`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "17", buildSystem = BuildSystem.MAVEN
+        )
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `returns MAVEN for kotlin maven component with javaVersion 21`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("kotlin"), javaVersion = "21", buildSystem = BuildSystem.MAVEN
+        )
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `returns MAVEN for java maven component in mismatch list`() {
+        every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "8", buildSystem = BuildSystem.MAVEN
+        )
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("mismatch-java-component", "1.0"))
     }
 
     @Test

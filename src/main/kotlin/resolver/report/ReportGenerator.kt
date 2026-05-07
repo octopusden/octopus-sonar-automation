@@ -33,7 +33,7 @@ class ReportGenerator(
         componentVersion: String,
         sonarProjectName: String,
         sonarServerUrl: String,
-        outputDir: File = File("sonar-report"),
+        outputDir: File = File(DEFAULT_OUTPUT_DIR),
     ): File {
         val fetchedData = fetcher.fetch(projectKey, branch)
 
@@ -53,11 +53,18 @@ class ReportGenerator(
         val sanitizedVersion = componentVersion.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val fileName = "$sanitizedName-$sanitizedVersion-sast-report.html"
 
-        if (!outputDir.mkdirs() && !outputDir.exists()) {
+        if (outputDir.exists()) {
+            require(outputDir.isDirectory) { "Output path exists but is not a directory: ${outputDir.absolutePath}" }
+        } else if (!outputDir.mkdirs() && !outputDir.isDirectory) {
             throw IllegalStateException("Failed to create output directory: ${outputDir.absolutePath}")
         }
+
         val outputFile = File(outputDir, fileName)
         outputFile.writeText(html, Charsets.UTF_8)
         return outputFile
+    }
+
+    companion object {
+        private const val DEFAULT_OUTPUT_DIR = "sonar-report"
     }
 }

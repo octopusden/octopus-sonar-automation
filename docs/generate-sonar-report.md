@@ -20,11 +20,11 @@ The HTML report is only generated when `sourceBranch == targetBranch` (i.e. on p
 
 The `QualityGateChecker` queries SonarQube for:
 
-| Check               | API                            | Description                                        |
-|----------------------|--------------------------------|----------------------------------------------------|
-| Quality gate status  | `qualitygates/project_status`  | Overall pass/fail                                  |
-| New issue count      | `issues/search` (new code)     | Unresolved issues in the new code period           |
-| Failed metrics       | `measures/component`           | Rating metrics below target                        |
+| Check               | API                           | Description                              |
+|---------------------|-------------------------------|------------------------------------------|
+| Quality gate status | `qualitygates/project_status` | Overall pass/fail                        |
+| New issue count     | `issues/search` (new code)    | Unresolved issues in the new code period |
+| Failed metrics      | `measures/component`          | Rating metrics below target              |
 
 **Metrics checked:**
 
@@ -41,13 +41,13 @@ The `QualityGateChecker` queries SonarQube for:
 
 The `TeamCityNotifier` translates the quality gate result into TeamCity service messages:
 
-| Condition                                                  | Message Type    | Effect              |
-|------------------------------------------------------------|-----------------|---------------------|
-| Quality gate **FAILED**                                    | `buildProblem`  | Fails the build     |
-| New issues found (feature/PR branch)                       | `buildStatus`   | Warning with count  |
-| New issues + failed metrics (production branch)            | `buildStatus`   | Warning with count + metric names |
-| No new issues but failed metrics (production branch)       | `buildStatus`   | Warning with metric names |
-| All clean                                                  | _(none)_        | Clean build         |
+| Condition                                            | Message Type   | Effect                            |
+|------------------------------------------------------|----------------|-----------------------------------|
+| Quality gate **FAILED**                              | `buildProblem` | Fails the build                   |
+| New issues found (feature/PR branch)                 | `buildStatus`  | Warning with count                |
+| New issues + failed metrics (production branch)      | `buildStatus`  | Warning with count + metric names |
+| No new issues but failed metrics (production branch) | `buildStatus`  | Warning with metric names         |
+| All clean                                            | _(none)_       | Clean build                       |
 
 All messages include a direct link to the SonarQube dashboard or issues page.
 
@@ -96,7 +96,7 @@ The report includes:
 The report is written to the working directory as:
 
 ```text
-<component-name>-<component-version>-sast-report.html
+sonar-report/<component-name>-<component-version>-sast-report.html
 ```
 
 Special characters in component name and version are replaced with `_`.
@@ -105,11 +105,11 @@ Special characters in component name and version are replaced with `_`.
 
 ## Usage
 
+Set the required environment variables for SonarQube authentication (`SONAR_USERNAME` & `SONAR_PASSWORD`), then run:
+
 ```bash
 java -jar sonar-automation-<version>.jar generate-sonar-report \
   --sonar-server-url=<url> \
-  --sonar-username=<user> \
-  --sonar-password=<password> \
   --component-name=<name> \
   --component-version=<version> \
   --sonar-project-key=<key> \
@@ -118,17 +118,17 @@ java -jar sonar-automation-<version>.jar generate-sonar-report \
   --sonar-target-branch=<branch>
 ```
 
-| Option                   | Required | Description                                               |
-|--------------------------|----------|-----------------------------------------------------------|
-| `--sonar-server-url`     | Yes      | SonarQube server URL                                      |
-| `--sonar-username`       | Yes      | SonarQube username                                        |
-| `--sonar-password`       | Yes      | SonarQube password                                        |
-| `--component-name`       | Yes      | Component name                                            |
-| `--component-version`    | Yes      | Component version                                         |
-| `--sonar-project-key`    | Yes      | SonarQube project key (from `calculate-sonar-params`)     |
-| `--sonar-project-name`   | Yes      | SonarQube project name (`PROJECT/repo:component`)         |
-| `--sonar-source-branch`  | Yes      | Source branch being analysed                              |
-| `--sonar-target-branch`  | Yes      | Target/base branch for comparison                         |
+| Option                  | Required | Description                                           |
+|-------------------------|----------|-------------------------------------------------------|
+| `--sonar-server-url`    | Yes      | SonarQube server URL                                  |
+| `--component-name`      | Yes      | Component name                                        |
+| `--component-version`   | Yes      | Component version                                     |
+| `--sonar-project-key`   | Yes      | SonarQube project key (from `calculate-sonar-params`) |
+| `--sonar-project-name`  | Yes      | SonarQube project name (`PROJECT/repo:component`)     |
+| `--sonar-source-branch` | Yes      | Source branch being analysed                          |
+| `--sonar-target-branch` | Yes      | Target/base branch for comparison                     |
+| `env.SONAR_USERNAME`    | Yes      | SonarQube username                                    |
+| `env.SONAR_PASSWORD`    | Yes      | SonarQube password                                    |
 
 In practice this is invoked automatically by the `GenerateSonarReport` TeamCity metarunner, using parameters set by [`calculate-sonar-params`](calculate-sonar-parameters.md).
 

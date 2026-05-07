@@ -34,8 +34,8 @@ class ReportGeneratorCommand : CliktCommand(
         val sonarClient = ClassicSonarClient(
             object : SonarClientParametersProvider {
                 override fun getBaseUrl() = sonarUrl
-                override fun getUsername() = System.getenv(SONAR_USERNAME_ENV)
-                override fun getPassword() = System.getenv(SONAR_PASSWORD_ENV)
+                override fun getUsername() = System.getenv(SONAR_USERNAME_ENV)?.takeIf { it.isNotEmpty() } ?: throw IllegalStateException("Environment variable $SONAR_USERNAME_ENV must be set and non-empty")
+                override fun getPassword() = System.getenv(SONAR_PASSWORD_ENV)?.takeIf { it.isNotEmpty() } ?: throw IllegalStateException("Environment variable $SONAR_PASSWORD_ENV must be set and non-empty")
                 override fun getConnectTimeoutInMillis() = 30_000L
                 override fun getReadTimeoutInMillis() = 60_000L
             }
