@@ -16,13 +16,17 @@ The metarunner's `additionalParameters` contains:
 -Dsonar.projectKey=%SONAR_PROJECT_KEY%
 -Dsonar.projectName=%SONAR_PROJECT_NAME%
 -Dsonar.projectVersion=%SONAR_PROJECT_VERSION%
--Dsonar.qualitygate.wait=%SONAR_QUALITY_GATE_WAIT%
 -Dsonar.host.url=%SONAR_SERVER_URL%
 -Dsonar.token=%SONAR_SERVER_TOKEN%
-%SONAR_EXTRA_PARAMETERS%
+%SONAR_RUNNER_EXTRA_PARAMETERS%
+%SONAR_PROJECT_EXTRA_PARAMETERS%
 ```
 
-> **Important:** The `additionalParameters` field requires parameters to be separated by **newlines**, not spaces. Using space-separated parameters can result in unresolved hosts or silently dropped parameters. The `SONAR_EXTRA_PARAMETERS` output from `CalculateSonarParameters` is already newline-separated.
+- `SONAR_PROJECT_KEY`, `SONAR_PROJECT_NAME`, `SONAR_PROJECT_VERSION`, `SONAR_SERVER_URL`, `SONAR_SERVER_TOKEN` are set by `CalculateSonarParameters` based on the component being analyzed. 
+- `SONAR_RUNNER_EXTRA_PARAMETERS` are set by `CalculateSonarParameters` which includes branch/pr related parameters.
+- `SONAR_PROJECT_EXTRA_PARAMETERS` is a placeholder for any additional parameters that may be needed for specific projects language or structure.
+
+> **Important:** The `additionalParameters` field requires parameters to be separated by **newlines**, not spaces. Using space-separated parameters can result in unresolved hosts or silently dropped parameters. The `SONAR_RUNNER_EXTRA_PARAMETERS` output from `CalculateSonarParameters` is already newline-separated.
 
 Additional parameters are configured directly on the metarunner:
 
@@ -43,6 +47,19 @@ When using the [Gradle SonarQube plugin](https://docs.sonarsource.com/sonarqube/
 
 `SONAR_PARAMETERS` contains the similar parameters as `additionalParameters` in the SonarRunner metarunner, but with additional Gradle-specific ones, for example: `-Dsonar.gradle.scanAll=true`.
 
+The parameter value must contain at minimum:
+
+```text
+-Dsonar.projectKey=%SONAR_PROJECT_KEY%
+-Dsonar.projectName=%SONAR_PROJECT_NAME%
+-Dsonar.projectVersion=%BUILD_VERSION%
+-Dsonar.host.url=%SONAR_SERVER_URL%
+-Dsonar.token=%SONAR_SERVER_TOKEN%
+%SONAR_EXTRA_PARAMETERS%
+%SONAR_PROJECT_EXTRA_PARAMETERS%
+```
+
+> **Important:** `SONAR_PARAMETERS` for Gradle plugin must use `SONAR_EXTRA_PARAMETERS` which is space-separated 
 
 #### `SONAR_TASK`
 
@@ -65,6 +82,20 @@ mvn org.sonarsource.scanner.maven:sonar-maven-plugin:{version}:sonar %SONAR_PARA
 ```
 
 `SONAR_PARAMETERS` contains the similar parameters as `additionalParameters` in the SonarRunner metarunner, but with additional Maven-specific ones, for example: `-Dsonar.maven.scanAll=true`.
+
+The parameter value must contain at minimum:
+
+```text
+-Dsonar.projectKey=%SONAR_PROJECT_KEY%
+-Dsonar.projectName=%SONAR_PROJECT_NAME%
+-Dsonar.projectVersion=%BUILD_VERSION%
+-Dsonar.host.url=%SONAR_SERVER_URL%
+-Dsonar.token=%SONAR_SERVER_TOKEN%
+%SONAR_EXTRA_PARAMETERS%
+%SONAR_PROJECT_EXTRA_PARAMETERS%
+```
+
+> **Important:** `SONAR_PARAMETERS` for Maven plugin must use `SONAR_EXTRA_PARAMETERS` which is space-separated
 
 Similarly, `SONAR_TASK` can be composed into Maven goals:
 

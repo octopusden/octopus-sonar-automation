@@ -67,6 +67,7 @@ class SonarParametersCalculator(
             sonarSourceBranch = branchContext.sourceBranch,
             sonarTargetBranch = branchContext.targetBranch,
             sonarExtraParameters = branchContext.sonarExtraParameters,
+            sonarRunnerExtraParameters = branchContext.sonarExtraParameters.replace(" ", "\n"),
             sonarServerId = sonarServer.id,
             sonarServerUrl = sonarServer.url,
             sonarServerToken = sonarServer.token,

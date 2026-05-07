@@ -37,7 +37,8 @@ Components with SonarQube analysis already set up manually are supported via con
 | `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)                                                         |
 | `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)                                                        |
 | `SONAR_SERVER_TOKEN`              | Authentication token for the SonarQube server (TC parameter reference)                                             |
-| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                                                                  |
+| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the Maven/Gradle sonar scanner, related to branch/pr analysis, separated by space            |
+| `SONAR_RUNNER_EXTRA_PARAMETERS`   | `-Dsonar.*` flags for the TeamCity sonar scanner, related to branch/pr analysis, separated by new-line             |
 | `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                                                                  |
 | `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                                                                      |
 | `SONAR_TASK`                      | Reference to TeamCity parameter, `%SONAR_GRADLE_TASK%` for Gradle, `%SONAR_MAVEN_GOAL%` for Maven, empty otherwise |
@@ -59,11 +60,11 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode     | Source Branch                                                            | Target Branch                                                                                                                                                                                                                   |
-|----------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                                                                                                                                                  |
-| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                                                                                                                                          |
-| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | Best-effort only (no VCS Facade calls): source branch if it matches a candidate, otherwise first candidate. Not used for Sonar parameters — `SONAR_EXTRA_PARAMETERS` is left empty since legacy config handles branch settings. |
+| Build Mode     | Source Branch                                                            | Target Branch                                                                                                                                                                                                                                                   |
+|----------------|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                                                                                                                                                                                  |
+| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                                                                                                                                                                          |
+| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | Best-effort only (no VCS Facade calls): source branch if it matches a candidate, otherwise first candidate. Not used for Sonar parameters — `SONAR_EXTRA_PARAMETERS`/`SONAR_RUNNER_EXTRA_PARAMETERS` is left empty since legacy config handles branch settings. |
 
 ### Sonar Server ID, URL, and Token
 
@@ -74,7 +75,7 @@ Determined by the component's language labels from the Components Registry:
 | `c`, `cpp`, `objective_c`, `swift`     | Developer Edition    |
 | Everything else                        | Community Edition    |
 
-### Sonar Extra Parameters
+### Sonar Extra Parameters & Sonar Runner Extra Parameters
 
 | Build Mode     | Parameters Set                                                                                                      |
 |----------------|---------------------------------------------------------------------------------------------------------------------|
