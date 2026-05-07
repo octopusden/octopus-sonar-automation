@@ -27,7 +27,7 @@ class SonarParameterBuilderTest {
     }
 
     @Test
-    fun `forPullRequest produces exactly three space-separated flags`() {
+    fun `forPullRequest produces exactly three new-line-separated flags`() {
         val result = SonarParameterBuilder.forPullRequest("99", "src", "tgt")
         assertEquals(
             "-Dsonar.pullrequest.key=99\n-Dsonar.pullrequest.branch=src\n-Dsonar.pullrequest.base=tgt",

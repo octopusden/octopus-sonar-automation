@@ -15,7 +15,7 @@
             <param name="SONAR_QUALITY_GATE_WAIT" value="%SONAR_QUALITY_GATE_WAIT%"/>
             <param name="SONAR_SERVER_URL" value="%SONAR_SERVER_URL%"/>
             <param name="SONAR_SERVER_TOKEN" value="%SONAR_SERVER_TOKEN%"/>
-            <param name="SONAR_EXTRA_PARAMETERS" value="%SONAR_EXTRA_PARAMETERS%" spec="text display='normal' description='Additional Sonar analysis parameters (e.g. -Dsonar.exclusions=**/*.test.java). Must be in the format: -Dkey=value. Separate multiple parameters with spaces.'"/>
+            <param name="SONAR_EXTRA_PARAMETERS" value="%SONAR_EXTRA_PARAMETERS%" spec="text display='normal' description='Additional Sonar analysis parameters (e.g. -Dsonar.exclusions=**/*.test.java). Must be in the format: -Dkey=value. Separate multiple parameters with newlines.'"/>
             <param name="SONAR_PARAMETERS" value="%SONAR_PARAMETERS%" spec="text display='normal' description='Default Sonar analysis parameters (must include: host URL, authentication token, project key, project name, project version).'"/>
             <param name="SONAR_PROJECT_SOURCES" value="%SONAR_PROJECT_SOURCES%" spec="text display='normal' description='Comma-separated paths to directories containing source files (e.g. src/main/java). Leave blank to use scanner defaults.'"/>
             <param name="SONAR_PROJECT_BINARIES" value="%SONAR_PROJECT_BINARIES%" spec="text display='normal' description='Comma-separated paths to directories containing compiled binaries (e.g. target/classes). Required for Java/Kotlin analysis. Leave blank if not applicable.'"/>
