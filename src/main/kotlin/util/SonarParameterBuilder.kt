@@ -11,14 +11,14 @@ object SonarParameterBuilder {
             "-Dsonar.pullrequest.key=$prKey",
             "-Dsonar.pullrequest.branch=$sourceBranch",
             "-Dsonar.pullrequest.base=$targetBranch"
-        ).joinToString(" ")
+        ).joinToString("\n")
 
     fun forBranch(sourceBranch: String, targetBranch: String): String {
         val params = mutableListOf("-Dsonar.branch.name=$sourceBranch")
         if (sourceBranch != targetBranch) {
             params += "-Dsonar.newCode.referenceBranch=$targetBranch"
         }
-        return params.joinToString(" ")
+        return params.joinToString("\n")
     }
 
 }
