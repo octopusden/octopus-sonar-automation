@@ -27,10 +27,10 @@ class SonarParameterBuilderTest {
     }
 
     @Test
-    fun `forPullRequest produces exactly three space-separated flags`() {
+    fun `forPullRequest produces exactly three new-line-separated flags`() {
         val result = SonarParameterBuilder.forPullRequest("99", "src", "tgt")
         assertEquals(
-            "-Dsonar.pullrequest.key=99 -Dsonar.pullrequest.branch=src -Dsonar.pullrequest.base=tgt",
+            "-Dsonar.pullrequest.key=99\n-Dsonar.pullrequest.branch=src\n-Dsonar.pullrequest.base=tgt",
             result
         )
     }
@@ -78,12 +78,12 @@ class SonarParameterBuilderTest {
     @Test
     fun `forBranch feature branch produces correct full string`() {
         val result = SonarParameterBuilder.forBranch("feature/abc", "main")
-        assertEquals("-Dsonar.branch.name=feature/abc -Dsonar.newCode.referenceBranch=main", result)
+        assertEquals("-Dsonar.branch.name=feature/abc\n-Dsonar.newCode.referenceBranch=main", result)
     }
 
     @Test
     fun `forBranch uses correct target when target is master`() {
         val result = SonarParameterBuilder.forBranch("hotfix/fix", "master")
-        assertEquals("-Dsonar.branch.name=hotfix/fix -Dsonar.newCode.referenceBranch=master", result)
+        assertEquals("-Dsonar.branch.name=hotfix/fix\n-Dsonar.newCode.referenceBranch=master", result)
     }
 }
