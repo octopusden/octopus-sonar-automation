@@ -75,6 +75,7 @@ class CalculateSonarParametersCommand : CliktCommand(
         setTeamcityParameter(SONAR_SERVER_URL_PARAMETER, params.sonarServerUrl)
         setTeamcityParameter(SONAR_SERVER_TOKEN_PARAMETER, params.sonarServerToken)
         setTeamcityParameter(SONAR_EXTRA_PARAMETERS_PARAMETER, params.sonarExtraParameters)
+        setTeamcityParameter(SONAR_RUNNER_EXTRA_PARAMETERS_PARAMETER, params.sonarRunnerExtraParameters)
         setTeamcityParameter(SKIP_SONAR_METARUNNER_EXECUTION_PARAMETER, params.skipSonarMetarunnerExecution.toString())
         setTeamcityParameter(SKIP_SONAR_REPORT_GENERATION_PARAMETER, params.skipSonarReportGeneration.toString())
         setTeamcityParameter(SONAR_TASK_PARAMETER, params.sonarPluginTask)
@@ -104,6 +105,7 @@ class CalculateSonarParametersCommand : CliktCommand(
         const val SONAR_SERVER_URL_PARAMETER = "SONAR_SERVER_URL"
         const val SONAR_SERVER_TOKEN_PARAMETER = "SONAR_SERVER_TOKEN"
         const val SONAR_EXTRA_PARAMETERS_PARAMETER = "SONAR_EXTRA_PARAMETERS"
+        const val SONAR_RUNNER_EXTRA_PARAMETERS_PARAMETER = "SONAR_RUNNER_EXTRA_PARAMETERS"
         const val SKIP_SONAR_METARUNNER_EXECUTION_PARAMETER = "SKIP_SONAR_METARUNNER_EXECUTION"
         const val SKIP_SONAR_REPORT_GENERATION_PARAMETER = "SKIP_SONAR_REPORT_GENERATION"
         const val SONAR_TASK_PARAMETER = "SONAR_TASK"

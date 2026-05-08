@@ -37,7 +37,8 @@ Components with SonarQube analysis already set up manually are supported via con
 | `SONAR_SERVER_ID`                 | ID of the SonarQube server to use (TC parameter reference)                                                         |
 | `SONAR_SERVER_URL`                | URL of the SonarQube server to use (TC parameter reference)                                                        |
 | `SONAR_SERVER_TOKEN`              | Authentication token for the SonarQube server (TC parameter reference)                                             |
-| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the scanner                                                                                  |
+| `SONAR_EXTRA_PARAMETERS`          | `-Dsonar.*` flags for the Maven/Gradle sonar scanner, related to branch/pr analysis, separated by space            |
+| `SONAR_RUNNER_EXTRA_PARAMETERS`   | `-Dsonar.*` flags for the TeamCity sonar scanner, related to branch/pr analysis, separated by new-line             |
 | `SKIP_SONAR_METARUNNER_EXECUTION` | `true` if Sonar metarunner scan should be skipped                                                                  |
 | `SKIP_SONAR_REPORT_GENERATION`    | `true` if report generation should be skipped                                                                      |
 | `SONAR_TASK`                      | Reference to TeamCity parameter, `%SONAR_GRADLE_TASK%` for Gradle, `%SONAR_MAVEN_GOAL%` for Maven, empty otherwise |
@@ -73,7 +74,7 @@ Determined by the component's language labels from the Components Registry:
 | `c`, `cpp`, `objective_c`, `swift`     | Developer Edition    |
 | Everything else                        | Community Edition    |
 
-### Sonar Extra Parameters
+### Sonar Extra Parameters & Sonar Runner Extra Parameters
 
 | Build Mode     | Parameters Set                                                                                                      |
 |----------------|---------------------------------------------------------------------------------------------------------------------|

@@ -4,11 +4,13 @@ Explains how the parameters produced by `CalculateSonarParameters` are consumed 
 
 ---
 
-## `SONAR_PARAMETERS`
+## Analysis Methods
 
-`SONAR_PARAMETERS` must be defined at the **TeamCity project or build-template level** as a parameter that composes the individual outputs of the `CalculateSonarParameters` metarunner into a single `-Dsonar.*` string.
+### 1. SonarRunner Metarunner
 
-The parameter value must contain at minimum:
+The `SonarRunner` metarunner uses the TeamCity SonarQube Runner plugin. Parameters are passed via the `additionalParameters` field, with **each parameter on its own line**.
+
+The metarunner's `additionalParameters` contains:
 
 ```text
 -Dsonar.projectKey=%SONAR_PROJECT_KEY%
@@ -16,32 +18,16 @@ The parameter value must contain at minimum:
 -Dsonar.projectVersion=%BUILD_VERSION%
 -Dsonar.host.url=%SONAR_SERVER_URL%
 -Dsonar.token=%SONAR_SERVER_TOKEN%
-%SONAR_EXTRA_PARAMETERS%
+%SONAR_RUNNER_EXTRA_PARAMETERS%
+%SONAR_PROJECT_EXTRA_PARAMETERS%
 ```
 
-| Variable                   | Source                       | Description                                                                        |
-|----------------------------|------------------------------|------------------------------------------------------------------------------------|
-| `%SONAR_PROJECT_KEY%`      | `CalculateSonarParameters`   | Unique project identifier in SonarQube                                             |
-| `%SONAR_PROJECT_NAME%`     | `CalculateSonarParameters`   | Human-readable project name shown in SonarQube                                     |
-| `%BUILD_VERSION%`          | TeamCity build configuration | Version of the component being built                                               |
-| `%SONAR_SERVER_URL%`       | `CalculateSonarParameters`   | URL of the SonarQube server (Community or Developer edition)                       |
-| `%SONAR_SERVER_TOKEN%`     | `CalculateSonarParameters`   | Authentication token (Community or Developer edition)                              |
-| `%SONAR_EXTRA_PARAMETERS%` | `CalculateSonarParameters`   | Branch/PR-specific flags (e.g. `sonar.branch.name`, `sonar.pullrequest.key`, etc.) |
+- `SONAR_PROJECT_KEY`, `SONAR_PROJECT_NAME`, `SONAR_SERVER_URL`, `SONAR_SERVER_TOKEN` are set by `CalculateSonarParameters` based on the component being analyzed. 
+- `BUILD_VERSION` is a standard TeamCity parameter representing the current build version.
+- `SONAR_RUNNER_EXTRA_PARAMETERS` are set by `CalculateSonarParameters` which includes branch/pr related parameters.
+- `SONAR_PROJECT_EXTRA_PARAMETERS` is a placeholder for any additional parameters that may be needed for specific projects language or structure.
 
-Additional flags, for example:
-
-```text
--Dsonar.qualitygate.wait=true
-%SONAR_ADDITIONAL_PARAMETERS%
-```
-
----
-
-## Analysis Methods
-
-### 1. SonarRunner Metarunner
-
-The `SonarRunner` metarunner uses the TeamCity SonarQube Runner plugin. `SONAR_PARAMETERS` is passed via the `additionalParameters` field.
+> **Important:** The `additionalParameters` field requires parameters to be separated by **newlines**, not spaces. Using space-separated parameters can result in unresolved hosts or silently dropped parameters. The `SONAR_RUNNER_EXTRA_PARAMETERS` output from `CalculateSonarParameters` is already newline-separated.
 
 Additional parameters are configured directly on the metarunner:
 
@@ -60,9 +46,25 @@ When using the [Gradle SonarQube plugin](https://docs.sonarsource.com/sonarqube/
 ./gradlew sonar %SONAR_PARAMETERS%
 ```
 
+`SONAR_PARAMETERS` contains the similar parameters as `additionalParameters` in the SonarRunner metarunner, but with additional Gradle-specific ones, for example: `-Dsonar.gradle.scanAll=true`.
+
+The parameter value must contain at minimum:
+
+```text
+-Dsonar.projectKey=%SONAR_PROJECT_KEY%
+-Dsonar.projectName=%SONAR_PROJECT_NAME%
+-Dsonar.projectVersion=%BUILD_VERSION%
+-Dsonar.host.url=%SONAR_SERVER_URL%
+-Dsonar.token=%SONAR_SERVER_TOKEN%
+%SONAR_EXTRA_PARAMETERS%
+%SONAR_PROJECT_EXTRA_PARAMETERS%
+```
+
+> **Important:** `SONAR_PARAMETERS` for Gradle plugin must use `SONAR_EXTRA_PARAMETERS` which is space-separated 
+
 #### `SONAR_TASK`
 
-The `CalculateSonarParameters` metarunner also sets `SONAR_TASK`. This parameter is set to reference to TeamCity parameter, `%SONAR_GRADLE_TASK%` for Gradle components and `%SONAR_MAVEN_GOAL%` for Maven components, when the component is Java/Kotlin-based and uses a modern Java version (17 or 21, including components in the mismatch-java-version list). Otherwise, it is set to an empty string.
+The `CalculateSonarParameters` metarunner also sets `SONAR_TASK`. This parameter is set to a reference to a TeamCity parameter: `%SONAR_GRADLE_TASK%` for Gradle components and `%SONAR_MAVEN_GOAL%` for Maven components, when the component is Java/Kotlin-based and uses a modern Java version (17 or 21, including components in the mismatch-java-version list). Otherwise, it is set to an empty string.
 
 This allows composing it into the default `GRADLE_TASK` TeamCity parameter so that the Sonar analysis task is included only when applicable:
 
@@ -79,6 +81,22 @@ When using the [Maven SonarQube plugin](https://docs.sonarsource.com/sonarqube/l
 ```bash
 mvn org.sonarsource.scanner.maven:sonar-maven-plugin:{version}:sonar %SONAR_PARAMETERS%
 ```
+
+`SONAR_PARAMETERS` contains the similar parameters as `additionalParameters` in the SonarRunner metarunner, but with additional Maven-specific ones, for example: `-Dsonar.maven.scanAll=true`.
+
+The parameter value must contain at minimum:
+
+```text
+-Dsonar.projectKey=%SONAR_PROJECT_KEY%
+-Dsonar.projectName=%SONAR_PROJECT_NAME%
+-Dsonar.projectVersion=%BUILD_VERSION%
+-Dsonar.host.url=%SONAR_SERVER_URL%
+-Dsonar.token=%SONAR_SERVER_TOKEN%
+%SONAR_EXTRA_PARAMETERS%
+%SONAR_PROJECT_EXTRA_PARAMETERS%
+```
+
+> **Important:** `SONAR_PARAMETERS` for Maven plugin must use `SONAR_EXTRA_PARAMETERS` which is space-separated
 
 Similarly, `SONAR_TASK` can be composed into Maven goals:
 
