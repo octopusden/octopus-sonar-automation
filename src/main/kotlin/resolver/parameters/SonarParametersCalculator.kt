@@ -38,8 +38,8 @@ class SonarParametersCalculator(
      * `pull-requests/`.
      *
      * When applied-SAST override exists for the component, project key/name come
-     * from that override and branch-comparison Sonar parameters are intentionally
-     * left empty.
+     * from that override. Branch resolution and extra parameters are identical
+     * to regular components.
      *
      * @return A fully populated [org.octopusden.octopus.sonar.dto.SonarParametersDTO].
      */
@@ -49,7 +49,7 @@ class SonarParametersCalculator(
         val sastOverride = sonarExecutionResolver.getAppliedSastOverride(componentName)
 
         val projectContext = resolveProjectContext(resolvedVcs, sastOverride)
-        val branchContext = resolveBranchContext(resolvedVcs, buildMode, sastOverride)
+        val branchContext = resolveBranchContext(resolvedVcs, buildMode)
 
         val sonarServer = sonarServerResolver.resolveSonarServer(componentName)
         val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
@@ -94,22 +94,13 @@ class SonarParametersCalculator(
 
     private fun resolveBranchContext(
         resolvedVcs: ResolvedVCSDTO,
-        buildMode: BuildMode,
-        sastOverride: SonarProjectOverride?
+        buildMode: BuildMode
     ): BranchContext {
-        if (sastOverride != null) {
-            val candidates = resolvedVcs.defaultBranches.ifEmpty { DEFAULT_BRANCH_CANDIDATES }
-            val targetBranch = targetBranchResolver.findTargetBranchBestEffort(resolvedVcs.commit, candidates)
-            return BranchContext(
-                sourceBranch = resolvedVcs.commit.branch,
-                targetBranch = targetBranch,
-                sonarExtraParameters = ""
-            )
-        }
+        val sourceBranch = resolvedVcs.commit.branch
 
         if (buildMode == BuildMode.PULL_REQUEST) {
             return BranchContext(
-                sourceBranch = resolvedVcs.commit.branch,
+                sourceBranch = sourceBranch,
                 targetBranch = TC_PULL_REQUEST_TARGET_BRANCH_PARAM,
                 sonarExtraParameters = SonarParameterBuilder.forPullRequest(
                     TC_PULL_REQUEST_NUMBER_PARAM,
@@ -119,7 +110,6 @@ class SonarParametersCalculator(
             )
         }
 
-        val sourceBranch = resolvedVcs.commit.branch
         val candidates = resolvedVcs.defaultBranches.ifEmpty { DEFAULT_BRANCH_CANDIDATES }
         val targetBranch = targetBranchResolver.findTargetBranch(resolvedVcs.commit, candidates)
 

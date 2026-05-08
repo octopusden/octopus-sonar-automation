@@ -20,7 +20,7 @@ Components with SonarQube analysis already set up manually are supported via con
 
 | File                        | Purpose                                                                                  |
 |-----------------------------|------------------------------------------------------------------------------------------|
-| `applied-sast.json`         | Components with manually applied SonarQube parameters (project key, name, extra params)  |
+| `applied-sast.json`         | Components with manually applied SonarQube project key and name overrides                |
 | `other-doc-components.txt`  | Documentation components that should be skipped for Sonar                                |
 | `mismatch-java-version.txt` | Java/Kotlin components registered as JDK 1.8 but actually using Java 17/21               |
 
@@ -59,11 +59,10 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode     | Source Branch                                                            | Target Branch                                                                                                                                                                                                                   |
-|----------------|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                                                                                                                                                  |
-| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                                                                                                                                          |
-| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | Best-effort only (no VCS Facade calls): source branch if it matches a candidate, otherwise first candidate. Not used for Sonar parameters — `SONAR_EXTRA_PARAMETERS` is left empty since legacy config handles branch settings. |
+| Build Mode   | Source Branch                        | Target Branch                                                  |
+|--------------|--------------------------------------|----------------------------------------------------------------|
+| Branch build | Branch from matched VCS settings     | Resolved via [Target Branch Analysis](#target-branch-analysis) |
+| PR build     | `pull-requests/<PR_NUMBER>` from VCS | `%teamcity.pullRequest.target.branch%`                         |
 
 ### Sonar Server ID, URL, and Token
 
@@ -80,7 +79,6 @@ Determined by the component's language labels from the Components Registry:
 |----------------|---------------------------------------------------------------------------------------------------------------------|
 | PR build       | `sonar.pullrequest.key`, `sonar.pullrequest.branch`, `sonar.pullrequest.base` — from TeamCity's PR parameters       |
 | Branch build   | `sonar.branch.name` = source branch; `sonar.newCode.referenceBranch` = target branch (omitted when source = target) |
-| `applied-sast` | Empty (handled by legacy config)                                                                                    |
 
 ### Skip Sonar Metarunner Execution
 
@@ -137,9 +135,7 @@ clean install %SONAR_TASK%
 
 For **pull-request builds**, the target branch is simply read from the TeamCity parameter `%teamcity.pullRequest.target.branch%` — no analysis is needed.
 
-For **applied-SAST builds**, target branch is resolved via **best-effort** — if the source branch matches any candidate, it is returned; otherwise the first candidate is used. No VCS Facade calls are made.
-
-For **regular branch builds**, the tool must determine which production/release branch the source branch was forked from. This is handled by the `TargetBranchResolver`.
+For **regular branch builds**, the tool must determine which production/release branch the source branch was forked from. This is handled by the `TargetBranchResolver`, which compares commit histories via VCS Facade.
 
 ### Algorithm
 
@@ -164,16 +160,16 @@ For **regular branch builds**, the tool must determine which production/release 
 
 5. **Fallback behaviour**:
 
-   | Scenario                                            | Result                      |
-   |-----------------------------------------------------|-----------------------------|
-   | Only one candidate                                  | Returns that candidate      |
-   | Source branch is a candidate                        | Returns source branch       |
-   | Common commit found with a candidate                | Returns closest ancestor    |
-   | VCS Facade error fetching source branch commits     | Returns first candidate     |
-   | Candidate branch not found (`NotFoundException`)    | Skips candidate, tries next |
-   | VCS Facade error fetching candidate commits         | Skips candidate, tries next |
-   | No common commit found after all windows/candidates | Returns first candidate     |
-   | Source branch has no commits in any window          | Returns first candidate     |
+   | Scenario                                            | Result                              |
+   |-----------------------------------------------------|-------------------------------------|
+   | Only one candidate                                  | Returns that candidate              |
+   | Source branch is a candidate                        | Returns source branch               |
+   | Common commit found with a candidate                | Returns closest ancestor            |
+   | VCS Facade error fetching source branch commits     | Returns first candidate             |
+   | Candidate branch not found (`NotFoundException`)    | Skips candidate, tries next         |
+   | VCS Facade error fetching candidate commits         | Skips candidate, tries next         |
+   | No common commit found after all windows/candidates | Returns first non-skipped candidate |
+   | Source branch has no commits in any window          | Returns first candidate             |
 
 ### Example
 

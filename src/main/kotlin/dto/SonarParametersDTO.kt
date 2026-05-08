@@ -17,7 +17,6 @@ package org.octopusden.octopus.sonar.dto
  * @param sonarServerUrl               TeamCity parameter name that holds the Sonar server URL.
  * @param sonarServerToken             TeamCity parameter name that holds the Sonar authentication token.
  * @param sonarExtraParameters         The `-Dsonar.*` flags string passed to the Sonar scanner.
- *                                     Empty when applied-SAST override is used.
  * @param skipSonarMetarunnerExecution Whether the Sonar metarunner step should be skipped entirely.
  * @param skipSonarReportGeneration    Whether the Sonar report generation step should be skipped.
  * @param sonarPluginTask              The build-tool task for Sonar analysis (`%SONAR_GRADLE_TASK%` for Gradle,
