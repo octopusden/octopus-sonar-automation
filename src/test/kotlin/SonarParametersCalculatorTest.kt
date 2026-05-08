@@ -120,7 +120,7 @@ class SonarParametersCalculatorTest {
     }
 
     @Test
-    fun `applied sast override on PR branch uses TC target param and skips findTargetBranch`() {
+    fun `applied sast override on PR branch uses PR parameters like regular PR`() {
         val resolvedVcs = resolvedVcs(branch = "pull-requests/456")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
@@ -138,12 +138,20 @@ class SonarParametersCalculatorTest {
         assertEquals("OVERRIDE/NAME", result.sonarProjectName)
         assertEquals("pull-requests/456", result.sonarSourceBranch)
         assertEquals("%teamcity.pullRequest.target.branch%", result.sonarTargetBranch)
+        assertEquals(
+            SonarParameterBuilder.forPullRequest(
+                "%teamcity.pullRequest.number%",
+                "%teamcity.pullRequest.source.branch%",
+                "%teamcity.pullRequest.target.branch%"
+            ),
+            result.sonarExtraParameters
+        )
 
         verify(exactly = 0) { targetBranchResolver.findTargetBranch(any(), any()) }
     }
 
     @Test
-    fun `applied sast override on feature branch resolves target via findTargetBranch`() {
+    fun `applied sast override on feature branch produces branch parameters like regular build`() {
         val resolvedVcs = resolvedVcs(branch = "feature/sast-test")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
@@ -162,13 +170,16 @@ class SonarParametersCalculatorTest {
         assertEquals("OVERRIDE/NAME", result.sonarProjectName)
         assertEquals("feature/sast-test", result.sonarSourceBranch)
         assertEquals("main", result.sonarTargetBranch)
-        assertEquals("", result.sonarExtraParameters)
+        assertEquals(
+            SonarParameterBuilder.forBranch("feature/sast-test", "main"),
+            result.sonarExtraParameters
+        )
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(any(), any()) }
     }
 
     @Test
-    fun `applied sast override on production branch returns matching target branch`() {
+    fun `applied sast override on production branch produces branch parameters like regular build`() {
         val resolvedVcs = resolvedVcs(branch = "main")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
@@ -185,13 +196,16 @@ class SonarParametersCalculatorTest {
 
         assertEquals("main", result.sonarSourceBranch)
         assertEquals("main", result.sonarTargetBranch)
-        assertEquals("", result.sonarExtraParameters)
+        assertEquals(
+            SonarParameterBuilder.forBranch("main", "main"),
+            result.sonarExtraParameters
+        )
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(any(), any()) }
     }
 
     @Test
-    fun `applied sast override on feature branch returns first candidate as target`() {
+    fun `applied sast override on feature branch resolves target and produces branch parameters`() {
         val resolvedVcs = resolvedVcs(branch = "feature/hotfix-1")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
@@ -208,7 +222,10 @@ class SonarParametersCalculatorTest {
 
         assertEquals("feature/hotfix-1", result.sonarSourceBranch)
         assertEquals("main", result.sonarTargetBranch)
-        assertEquals("", result.sonarExtraParameters)
+        assertEquals(
+            SonarParameterBuilder.forBranch("feature/hotfix-1", "main"),
+            result.sonarExtraParameters
+        )
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(any(), any()) }
     }

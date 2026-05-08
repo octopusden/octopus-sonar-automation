@@ -59,11 +59,10 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode     | Source Branch                                                            | Target Branch                                                                                                                                                                                                                                       |
-|----------------|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Branch build   | Branch from matched VCS settings                                         | Resolved via [Target Branch Analysis](#target-branch-analysis)                                                                                                                                                                                      |
-| PR build       | `pull-requests/<PR_NUMBER>` from VCS                                     | `%teamcity.pullRequest.target.branch%`                                                                                                                                                                                                              |
-| `applied-sast` | Branch from matched VCS settings or `pull-requests/<PR_NUMBER>` from VCS | Resolved via [Target Branch Analysis](#target-branch-analysis) (same as regular branch builds). Not used for Sonar parameters — `SONAR_EXTRA_PARAMETERS`/`SONAR_RUNNER_EXTRA_PARAMETERS` is left empty since legacy config handles branch settings. |
+| Build Mode   | Source Branch                        | Target Branch                                                  |
+|--------------|--------------------------------------|----------------------------------------------------------------|
+| Branch build | Branch from matched VCS settings     | Resolved via [Target Branch Analysis](#target-branch-analysis) |
+| PR build     | `pull-requests/<PR_NUMBER>` from VCS | `%teamcity.pullRequest.target.branch%`                         |
 
 ### Sonar Server ID, URL, and Token
 
@@ -80,7 +79,6 @@ Determined by the component's language labels from the Components Registry:
 |----------------|---------------------------------------------------------------------------------------------------------------------|
 | PR build       | `sonar.pullrequest.key`, `sonar.pullrequest.branch`, `sonar.pullrequest.base` — from TeamCity's PR parameters       |
 | Branch build   | `sonar.branch.name` = source branch; `sonar.newCode.referenceBranch` = target branch (omitted when source = target) |
-| `applied-sast` | Empty (handled by legacy config)                                                                                    |
 
 ### Skip Sonar Metarunner Execution
 
