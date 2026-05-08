@@ -154,6 +154,26 @@ class TargetBranchResolverTest {
         assertEquals("main", result)
     }
 
+    @Test
+    fun `falls back to first non-skipped candidate when first candidate is not found and no common commit exists`() {
+        stubCommits("orphan", listOf(Fixtures.commit("x1"), Fixtures.commit("x2")))
+        stubCommitsThrows("main", NotFoundException("main not found"))
+        stubCommits("master", listOf(Fixtures.commit("z1"), Fixtures.commit("z2")))
+
+        val result = resolver.findTargetBranch(stamp("orphan"), listOf("main", "master"))
+        assertEquals("master", result)
+    }
+
+    @Test
+    fun `falls back to first candidate when all candidates are skipped`() {
+        stubCommits("orphan", listOf(Fixtures.commit("x1"), Fixtures.commit("x2")))
+        stubCommitsThrows("main", NotFoundException("main not found"))
+        stubCommitsThrows("master", NotFoundException("master not found"))
+
+        val result = resolver.findTargetBranch(stamp("orphan"), listOf("main", "master"))
+        assertEquals("main", result)
+    }
+
     // ── closer ancestor wins over candidate order ───────────────────────────
 
     @Test
@@ -356,34 +376,6 @@ class TargetBranchResolverTest {
         assertEquals("main", result)
     }
 
-    // ── findTargetBranchBestEffort ──────────────────────────────────────────
-
-    @Test
-    fun `best-effort returns source branch when it matches a candidate`() {
-        val result = resolver.findTargetBranchBestEffort(stamp("main"), listOf("main", "master"))
-        assertEquals("main", result)
-        verify(exactly = 0) { vcsFacadeClient.getCommits(any(), any(), any(), any()) }
-    }
-
-    @Test
-    fun `best-effort returns first candidate when source branch does not match`() {
-        val result = resolver.findTargetBranchBestEffort(stamp("feature/abc"), listOf("main", "master"))
-        assertEquals("main", result)
-        verify(exactly = 0) { vcsFacadeClient.getCommits(any(), any(), any(), any()) }
-    }
-
-    @Test
-    fun `best-effort returns single candidate regardless of source branch`() {
-        val result = resolver.findTargetBranchBestEffort(stamp("feature/xyz"), listOf("main"))
-        assertEquals("main", result)
-    }
-
-    @Test
-    fun `best-effort throws when candidates list is empty`() {
-        assertFailsWith<IllegalArgumentException> {
-            resolver.findTargetBranchBestEffort(stamp("feature/abc"), emptyList())
-        }
-    }
 
     companion object {
         private const val DAY_IN_MILLIS = 24L * 60 * 60 * 1000

@@ -119,27 +119,11 @@ class TargetBranchResolver(
             }
         }
 
-        logger.warn("Could not determine target branch from {} - falling back to '{}'", candidates, candidates.first())
-        return candidates.first()
+        val fallback = candidates.firstOrNull { it !in skippedCandidates } ?: candidates.first()
+        logger.warn("Could not determine target branch from {} - falling back to '{}'", candidates, fallback)
+        return fallback
     }
 
-    /**
-     * Best-effort target branch resolution without VCS Facade calls.
-     *
-     * Returns the source branch if it matches any candidate, otherwise returns the first candidate.
-     * Used for applied-SAST components where exact diverge-point detection is not required.
-     */
-    fun findTargetBranchBestEffort(commit: CommitStampDTO, candidates: List<String>): String {
-        require(candidates.isNotEmpty()) { "candidates must not be empty" }
-
-        if (commit.branch in candidates) {
-            logger.info("Best-effort: source branch '{}' matches candidate - returning it", commit.branch)
-            return commit.branch
-        }
-
-        logger.info("Best-effort: source branch '{}' not in candidates {} - returning first", commit.branch, candidates)
-        return candidates.first()
-    }
 
     private fun buildWindowDays(): List<Int> {
         val windows = mutableListOf<Int>()
