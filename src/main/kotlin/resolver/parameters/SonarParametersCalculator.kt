@@ -97,19 +97,11 @@ class SonarParametersCalculator(
         buildMode: BuildMode,
         sastOverride: SonarProjectOverride?
     ): BranchContext {
-        if (sastOverride != null) {
-            val candidates = resolvedVcs.defaultBranches.ifEmpty { DEFAULT_BRANCH_CANDIDATES }
-            val targetBranch = targetBranchResolver.findTargetBranchBestEffort(resolvedVcs.commit, candidates)
-            return BranchContext(
-                sourceBranch = resolvedVcs.commit.branch,
-                targetBranch = targetBranch,
-                sonarExtraParameters = ""
-            )
-        }
+        val sourceBranch = resolvedVcs.commit.branch
 
         if (buildMode == BuildMode.PULL_REQUEST) {
             return BranchContext(
-                sourceBranch = resolvedVcs.commit.branch,
+                sourceBranch = sourceBranch,
                 targetBranch = TC_PULL_REQUEST_TARGET_BRANCH_PARAM,
                 sonarExtraParameters = SonarParameterBuilder.forPullRequest(
                     TC_PULL_REQUEST_NUMBER_PARAM,
@@ -119,9 +111,16 @@ class SonarParametersCalculator(
             )
         }
 
-        val sourceBranch = resolvedVcs.commit.branch
         val candidates = resolvedVcs.defaultBranches.ifEmpty { DEFAULT_BRANCH_CANDIDATES }
         val targetBranch = targetBranchResolver.findTargetBranch(resolvedVcs.commit, candidates)
+
+        if (sastOverride != null) {
+            return BranchContext(
+                sourceBranch = sourceBranch,
+                targetBranch = targetBranch,
+                sonarExtraParameters = ""
+            )
+        }
 
         return BranchContext(
             sourceBranch = sourceBranch,
