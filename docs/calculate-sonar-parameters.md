@@ -135,7 +135,7 @@ clean install %SONAR_TASK%
 
 For **pull-request builds**, the target branch is simply read from the TeamCity parameter `%teamcity.pullRequest.target.branch%` — no analysis is needed.
 
-For **regular branch builds** and **applied-SAST builds**, the tool must determine which production/release branch the source branch was forked from. This is handled by the `TargetBranchResolver`, which compares commit histories via VCS Facade. For applied-SAST components, the resolved target branch is used internally but `SONAR_EXTRA_PARAMETERS` remains empty since legacy config handles branch settings.
+For **regular branch builds**, the tool must determine which production/release branch the source branch was forked from. This is handled by the `TargetBranchResolver`, which compares commit histories via VCS Facade.
 
 ### Algorithm
 
