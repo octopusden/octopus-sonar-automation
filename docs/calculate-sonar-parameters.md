@@ -20,7 +20,7 @@ Components with SonarQube analysis already set up manually are supported via con
 
 | File                        | Purpose                                                                                  |
 |-----------------------------|------------------------------------------------------------------------------------------|
-| `applied-sast.json`         | Components with manually applied SonarQube parameters (project key, name, extra params)  |
+| `applied-sast.json`         | Components with manually applied SonarQube project key and name overrides                |
 | `other-doc-components.txt`  | Documentation components that should be skipped for Sonar                                |
 | `mismatch-java-version.txt` | Java/Kotlin components registered as JDK 1.8 but actually using Java 17/21               |
 
