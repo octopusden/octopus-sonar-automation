@@ -164,6 +164,16 @@ class TargetBranchResolverTest {
         assertEquals("master", result)
     }
 
+    @Test
+    fun `falls back to first candidate when all candidates are skipped`() {
+        stubCommits("orphan", listOf(Fixtures.commit("x1"), Fixtures.commit("x2")))
+        stubCommitsThrows("main", NotFoundException("main not found"))
+        stubCommitsThrows("master", NotFoundException("master not found"))
+
+        val result = resolver.findTargetBranch(stamp("orphan"), listOf("main", "master"))
+        assertEquals("main", result)
+    }
+
     // ── closer ancestor wins over candidate order ───────────────────────────
 
     @Test
