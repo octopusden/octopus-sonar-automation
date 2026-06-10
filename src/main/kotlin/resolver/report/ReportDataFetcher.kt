@@ -11,6 +11,11 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
 
     companion object {
         private const val PAGE_SIZE = 500
+        /**
+         * Backstop against runaway pagination. With PAGE_SIZE=500, [SONAR_MAX_RESULTS]
+         * stops the loop at page 20, so this limit can only be reached if PAGE_SIZE is
+         * reduced below 100. Keep it as a safety net, not as the primary guard.
+         */
         private const val MAX_PAGES = 100
 
         /**
@@ -80,6 +85,10 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
             val fetched = paging.pageIndex * paging.pageSize
 
             if (fetched >= SONAR_MAX_RESULTS) {
+                // effortTotal comes from the page-1 response and reflects the full
+                // result set (e.g. 12,000 issues), not just the 10,000 we fetched.
+                // This is intentional: the effort figure in the report is the total
+                // remediation cost for the project, not a partial sum.
                 return IssuesFetchResult(
                     issues = allIssues,
                     effortTotal = effortTotal,

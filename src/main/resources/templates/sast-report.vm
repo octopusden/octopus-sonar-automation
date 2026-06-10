@@ -735,7 +735,11 @@
     #end
     SonarQube limits results to $sonarMaxResults per query.
   </span>
-  <a class="truncation-link" href="$esc.html($helper.projectUrl())" target="_blank">View all on SonarQube ↗</a>
+  #if($hotspotsTruncated && !$issuesTruncated)
+  <a class="truncation-link" href="$esc.html($helper.allHotspotsUrl())" target="_blank">View all on SonarQube ↗</a>
+  #else
+  <a class="truncation-link" href="$esc.html($helper.allIssuesUrl())" target="_blank">View all on SonarQube ↗</a>
+  #end
 </div>
 #end
 
