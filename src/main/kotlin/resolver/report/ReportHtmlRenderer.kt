@@ -71,8 +71,8 @@ class ReportHtmlRenderer {
             context.put("issuesTruncated", data.issuesTruncated)
             context.put("totalIssues", "%,d".format(Locale.US, data.totalIssues))
             context.put("hotspotsTruncated", data.hotspotsTruncated)
-            context.put("totalHotspots", "%,d".format(data.totalHotspots))
-            context.put("sonarMaxResults", "%,d".format(ReportDataFetcher.SONAR_MAX_RESULTS))
+            context.put("totalHotspots", "%,d".format(Locale.US, data.totalHotspots))
+            context.put("sonarMaxResults", "%,d".format(Locale.US, ReportDataFetcher.SONAR_MAX_RESULTS))
 
             // Issue groups (only groups that have issues)
             val issuesByGroup = data.issues.groupBy { normalizeSeverity(it.severity) }
