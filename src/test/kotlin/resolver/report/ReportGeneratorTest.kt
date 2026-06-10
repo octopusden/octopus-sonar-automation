@@ -15,6 +15,7 @@ import org.octopusden.octopus.sonar.client.dto.QualityGateResponseDTO
 import java.io.File
 import java.util.Date
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -215,6 +216,101 @@ class ReportGeneratorTest {
             assertTrue(file.exists())
             verify(exactly = 1) { sonarClient.searchIssues(any(), any(), any(), 500, 1) }
             verify(exactly = 1) { sonarClient.searchIssues(any(), any(), any(), 500, 2) }
+            // No truncation — total (600) is within the 10,000 limit.
+            // Check the id= attribute, not the class name (which also appears in the <style> block).
+            assertFalse(file.readText().contains("id=\"truncation-notice\""), "Should not show truncation notice for 600 issues")
+        } finally {
+            outputDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `stops at 10000 result limit and shows truncation notice`() {
+        val maxResults = ReportDataFetcher.SONAR_MAX_RESULTS   // 10_000
+        val pageSize = 500
+        val totalOnSonar = 12_000   // exceeds the limit
+        val totalPages = maxResults / pageSize   // 20 pages → exactly 10,000 fetched
+
+        // Mock all 20 pages
+        for (page in 1..totalPages) {
+            val pageIssues = ((page - 1) * pageSize + 1..page * pageSize)
+                .map { sampleIssue(key = "AX$it") }
+            every { sonarClient.searchIssues(any(), any(), any(), pageSize, page) } returns IssuesResponseDTO(
+                paging = PagingDTO(pageIndex = page, pageSize = pageSize, total = totalOnSonar),
+                effortTotal = page * 100,
+                issues = pageIssues,
+            )
+        }
+        // Page 21 must never be called — if it is, the mock throws an unexpected call error
+        every { sonarClient.searchHotspots(any(), any(), any(), any(), any()) } returns hotspotResponse()
+        every { sonarClient.getQualityGateStatus(any(), any()) } returns qualityGateResponse("OK")
+
+        val outputDir = createTempDir("report-test")
+        try {
+            val generator = ReportGenerator(sonarClient)
+            val file = generator.generate(
+                projectKey = "proj",
+                branch = "master",
+                componentName = "big-project",
+                componentVersion = "5.0.0",
+                sonarProjectName = "PS/big-project",
+                sonarServerUrl = "https://sonar.example.com",
+                outputDir = outputDir,
+            )
+
+            assertTrue(file.exists())
+
+            // Page 21 must never have been requested
+            verify(exactly = 0) { sonarClient.searchIssues(any(), any(), any(), pageSize, 21) }
+
+            val content = file.readText()
+            assertTrue(content.contains("id=\"truncation-notice\""), "Should show truncation notice")
+            assertTrue(content.contains("10,000"), "Should mention the 10,000 limit")
+            assertTrue(content.contains("12,000"), "Should show total issue count from SonarQube")
+            assertTrue(content.contains("View all on SonarQube"), "Should contain link to SonarQube")
+        } finally {
+            outputDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `stops hotspots at 10000 result limit and shows truncation notice`() {
+        val maxResults = ReportDataFetcher.SONAR_MAX_RESULTS
+        val pageSize = 500
+        val totalOnSonar = 11_500
+        val totalPages = maxResults / pageSize   // 20 pages
+
+        every { sonarClient.searchIssues(any(), any(), any(), any(), any()) } returns issueResponse()
+
+        for (page in 1..totalPages) {
+            val pageHotspots = ((page - 1) * pageSize + 1..page * pageSize)
+                .map { sampleHotspot(key = "HS$it") }
+            every { sonarClient.searchHotspots(any(), any(), any(), pageSize, page) } returns HotspotsResponseDTO(
+                paging = PagingDTO(pageIndex = page, pageSize = pageSize, total = totalOnSonar),
+                hotspots = pageHotspots,
+            )
+        }
+        every { sonarClient.getQualityGateStatus(any(), any()) } returns qualityGateResponse("OK")
+
+        val outputDir = createTempDir("report-test")
+        try {
+            val generator = ReportGenerator(sonarClient)
+            val file = generator.generate(
+                projectKey = "proj",
+                branch = "master",
+                componentName = "hotspot-heavy",
+                componentVersion = "1.0.0",
+                sonarProjectName = "PS/hotspot-heavy",
+                sonarServerUrl = "https://sonar.example.com",
+                outputDir = outputDir,
+            )
+
+            assertTrue(file.exists())
+            verify(exactly = 0) { sonarClient.searchHotspots(any(), any(), any(), pageSize, 21) }
+
+            val content = file.readText()
+            assertTrue(content.contains("id=\"truncation-notice\""), "Should show truncation notice for hotspots")
+            assertTrue(content.contains("View all on SonarQube"), "Should contain link to SonarQube")
         } finally {
             outputDir.deleteRecursively()
         }

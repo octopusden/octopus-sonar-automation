@@ -10,7 +10,7 @@ The `generate-sonar-report` command performs three steps:
 
 1. **Quality Gate Check** — queries SonarQube for quality gate status, new issue count, and metric ratings.
 2. **TeamCity Notification** — translates the result into build-level feedback (build problems or status warnings).
-3. **HTML Report Generation** _(production branches only)_ — fetches all issues and hotspots, then renders a self-contained HTML report.
+3. **HTML Report Generation** _(production branches only)_ — fetches up to 10,000 issues and hotspots (SonarQube's API limit), then renders a self-contained HTML report. A warning banner is shown when the result set was capped.
 
 The HTML report is only generated when `sourceBranch == targetBranch` (i.e. on production/release branches). For feature branches and PRs, only the quality gate check and TeamCity notification are performed.
 

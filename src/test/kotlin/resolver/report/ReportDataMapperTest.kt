@@ -35,7 +35,11 @@ class ReportDataMapperTest {
             fetchedData = ReportDataFetcher.FetchedData(
                 effortTotal = 0,
                 issues = listOf(issue),
+                totalIssues = 1,
+                issuesTruncated = false,
                 hotspots = emptyList(),
+                totalHotspots = 0,
+                hotspotsTruncated = false,
                 qualityGateStatus = "OK",
             ),
             componentName = "comp",

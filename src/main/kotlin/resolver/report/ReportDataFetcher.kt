@@ -12,29 +12,51 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
     companion object {
         private const val PAGE_SIZE = 500
         private const val MAX_PAGES = 100
+
+        /**
+         * Hard ceiling imposed by SonarQube: the API returns HTTP 400 when the requested
+         * offset exceeds 10,000.  We stop fetching once we would breach this limit.
+         */
+        const val SONAR_MAX_RESULTS = 10_000
     }
 
     data class FetchedData(
         val effortTotal: Int,
         val issues: List<IssueDTO>,
+        val totalIssues: Int,
+        val issuesTruncated: Boolean,
         val hotspots: List<HotspotDTO>,
+        val totalHotspots: Int,
+        val hotspotsTruncated: Boolean,
         val qualityGateStatus: String,
     )
 
     private data class IssuesFetchResult(
         val issues: List<IssueDTO>,
         val effortTotal: Int,
+        val totalIssues: Int,
+        val truncated: Boolean,
+    )
+
+    private data class HotspotsFetchResult(
+        val hotspots: List<HotspotDTO>,
+        val totalHotspots: Int,
+        val truncated: Boolean,
     )
 
     fun fetch(projectKey: String, branch: String): FetchedData {
         val issuesResult = fetchAllIssues(projectKey, branch)
-        val hotspots = fetchAllHotspots(projectKey, branch)
+        val hotspotsResult = fetchAllHotspots(projectKey, branch)
         val qualityGateStatus = sonarClient.getQualityGateStatus(branch, projectKey).projectStatus.status
 
         return FetchedData(
             effortTotal = issuesResult.effortTotal,
             issues = issuesResult.issues,
-            hotspots = hotspots,
+            totalIssues = issuesResult.totalIssues,
+            issuesTruncated = issuesResult.truncated,
+            hotspots = hotspotsResult.hotspots,
+            totalHotspots = hotspotsResult.totalHotspots,
+            hotspotsTruncated = hotspotsResult.truncated,
             qualityGateStatus = qualityGateStatus,
         )
     }
@@ -43,6 +65,7 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         val allIssues = mutableListOf<IssueDTO>()
         var page = 1
         var effortTotal = 0
+        var totalIssues = 0
 
         while (page <= MAX_PAGES) {
             val response = sonarClient.searchIssues(projectKey, branch, resolved = false, ps = PAGE_SIZE, p = page)
@@ -50,29 +73,56 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
 
             if (page == 1) {
                 effortTotal = response.effortTotal ?: 0
+                totalIssues = response.paging.total
             }
 
             val paging = response.paging
-            if (paging.pageIndex * paging.pageSize >= paging.total) break
+            val fetched = paging.pageIndex * paging.pageSize
+
+            if (fetched >= SONAR_MAX_RESULTS) {
+                return IssuesFetchResult(
+                    issues = allIssues,
+                    effortTotal = effortTotal,
+                    totalIssues = totalIssues,
+                    truncated = totalIssues > SONAR_MAX_RESULTS,
+                )
+            }
+
+            if (fetched >= paging.total) break
             page++
         }
 
-        return IssuesFetchResult(issues = allIssues, effortTotal = effortTotal)
+        return IssuesFetchResult(issues = allIssues, effortTotal = effortTotal, totalIssues = totalIssues, truncated = false)
     }
 
-    private fun fetchAllHotspots(projectKey: String, branch: String): List<HotspotDTO> {
+    private fun fetchAllHotspots(projectKey: String, branch: String): HotspotsFetchResult {
         val allHotspots = mutableListOf<HotspotDTO>()
         var page = 1
+        var totalHotspots = 0
 
         while (page <= MAX_PAGES) {
             val response = sonarClient.searchHotspots(projectKey, branch, status = "TO_REVIEW", ps = PAGE_SIZE, p = page)
             allHotspots.addAll(response.hotspots)
 
+            if (page == 1) {
+                totalHotspots = response.paging.total
+            }
+
             val paging = response.paging
-            if (paging.pageIndex * paging.pageSize >= paging.total) break
+            val fetched = paging.pageIndex * paging.pageSize
+
+            if (fetched >= SONAR_MAX_RESULTS) {
+                return HotspotsFetchResult(
+                    hotspots = allHotspots,
+                    totalHotspots = totalHotspots,
+                    truncated = totalHotspots > SONAR_MAX_RESULTS,
+                )
+            }
+
+            if (fetched >= paging.total) break
             page++
         }
 
-        return allHotspots
+        return HotspotsFetchResult(hotspots = allHotspots, totalHotspots = totalHotspots, truncated = false)
     }
 }
