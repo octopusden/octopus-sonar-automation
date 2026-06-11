@@ -10,6 +10,7 @@ import org.apache.velocity.runtime.RuntimeConstants
 import org.apache.velocity.tools.generic.EscapeTool
 import java.io.StringWriter
 import java.net.URLEncoder
+import java.util.Locale
 
 /**
  * Renders the SAST report HTML from [ReportData] using Apache Velocity templates.
@@ -65,6 +66,13 @@ class ReportHtmlRenderer {
             context.put("lowCount", severityCounts["LOW"] ?: 0)
             context.put("infoCount", severityCounts["INFO"] ?: 0)
             context.put("hotspotCount", data.hotspots.size)
+
+            // Truncation info (SonarQube 10,000-result limit)
+            context.put("issuesTruncated", data.issuesTruncated)
+            context.put("totalIssues", "%,d".format(Locale.US, data.totalIssues))
+            context.put("hotspotsTruncated", data.hotspotsTruncated)
+            context.put("totalHotspots", "%,d".format(Locale.US, data.totalHotspots))
+            context.put("sonarMaxResults", "%,d".format(Locale.US, ReportDataFetcher.SONAR_MAX_RESULTS))
 
             // Issue groups (only groups that have issues)
             val issuesByGroup = data.issues.groupBy { normalizeSeverity(it.severity) }
@@ -143,6 +151,18 @@ class ReportHtmlRenderer {
             val projectKey = enc(data.sonarProjectKey)
             val issueKey = enc(issue.key)
             return "$baseUrl/project/issues?id=$projectKey&issues=$issueKey&open=$issueKey&${branchParam()}"
+        }
+
+        fun allIssuesUrl(): String {
+            val baseUrl = data.sonarServerUrl.trimEnd('/')
+            val projectKey = enc(data.sonarProjectKey)
+            return "$baseUrl/project/issues?id=$projectKey&${branchParam()}&resolved=false"
+        }
+
+        fun allHotspotsUrl(): String {
+            val baseUrl = data.sonarServerUrl.trimEnd('/')
+            val projectKey = enc(data.sonarProjectKey)
+            return "$baseUrl/security_hotspots?id=$projectKey&${branchParam()}"
         }
 
         fun hotspotUrl(hotspot: ReportHotspotItem): String {

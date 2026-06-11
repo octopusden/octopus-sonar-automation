@@ -605,6 +605,36 @@
     color: var(--muted); letter-spacing: 0.08em;
     text-transform: uppercase; align-self: center; padding: 0 4px;
   }
+
+  /* ── truncation notice ── */
+  .truncation-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 40px 0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: rgba(232,200,74,0.07);
+    border: 1px solid rgba(232,200,74,0.25);
+    font-size: 13px;
+    color: var(--medium);
+    animation: fadeDown 0.4s 0.14s ease both;
+  }
+
+  .truncation-icon { font-size: 15px; flex-shrink: 0; }
+
+  .truncation-text { flex: 1; color: var(--text); font-size: 13px; }
+
+  .truncation-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.15s;
+  }
+  .truncation-link:hover { border-bottom-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -690,6 +720,28 @@
     <input type="text" placeholder="Search file, rule, message..." oninput="searchIssues(this.value)"/>
   </div>
 </div>
+
+<!-- TRUNCATION NOTICE -->
+#if($issuesTruncated || $hotspotsTruncated)
+<div class="truncation-notice" id="truncation-notice">
+  <span class="truncation-icon">⚠</span>
+  <span class="truncation-text">
+    #if($issuesTruncated && $hotspotsTruncated)
+      Showing first $sonarMaxResults of $totalIssues issues and first $sonarMaxResults of $totalHotspots hotspots.
+    #elseif($issuesTruncated)
+      Showing first $sonarMaxResults of $totalIssues issues.
+    #else
+      Showing first $sonarMaxResults of $totalHotspots hotspots.
+    #end
+    SonarQube limits results to $sonarMaxResults per query.
+  </span>
+  #if($hotspotsTruncated && !$issuesTruncated)
+  <a class="truncation-link" href="$esc.html($helper.allHotspotsUrl())" target="_blank">View all on SonarQube ↗</a>
+  #else
+  <a class="truncation-link" href="$esc.html($helper.allIssuesUrl())" target="_blank">View all on SonarQube ↗</a>
+  #end
+</div>
+#end
 
 <!-- ISSUE LIST -->
 <div class="issue-list" id="issue-list">
