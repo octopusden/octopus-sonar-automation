@@ -105,7 +105,7 @@ class ReportHtmlRenderer {
     }
 
     private fun qualityGateDisplay(status: String): Pair<String, String> = when (status.uppercase()) {
-        "OK" -> "passed" to "Quality Gate Passed"
+        "OK", "WARN" -> "passed" to "Quality Gate Passed"
         else -> "failed" to "Quality Gate Failed"
     }
 

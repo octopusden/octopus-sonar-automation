@@ -2,8 +2,10 @@ package org.octopusden.octopus.sonar.command
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.check
+import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
+import com.github.ajalt.clikt.parameters.types.int
 import org.octopusden.octopus.sonar.client.impl.ClassicSonarClient
 import org.octopusden.octopus.sonar.client.impl.SonarClientParametersProvider
 import org.octopusden.octopus.sonar.resolver.report.QualityGateChecker
@@ -30,6 +32,16 @@ class ReportGeneratorCommand : CliktCommand(
     private val sonarTargetBranch by option(SONAR_TARGET_BRANCH_OPTION, help = "Sonar target branch")
         .required().check("$SONAR_TARGET_BRANCH_OPTION is empty") { it.isNotEmpty() }
 
+    private val qualityGateMaxRetries by option(
+        QUALITY_GATE_MAX_RETRIES_OPTION,
+        help = "Max retries when quality gate status is NONE (not yet computed)"
+    ).int().default(20)
+
+    private val qualityGateRetryDelaySeconds by option(
+        QUALITY_GATE_RETRY_DELAY_SECONDS_OPTION,
+        help = "Seconds to wait between quality gate status retries"
+    ).int().default(5)
+
     override fun run() {
         val sonarClient = ClassicSonarClient(
             object : SonarClientParametersProvider {
@@ -41,7 +53,11 @@ class ReportGeneratorCommand : CliktCommand(
             }
         )
 
-        val qualityGateChecker = QualityGateChecker(sonarClient)
+        val qualityGateChecker = QualityGateChecker(
+            sonarClient = sonarClient,
+            maxRetries = qualityGateMaxRetries,
+            retryDelaySeconds = qualityGateRetryDelaySeconds,
+        )
         val checkResult = qualityGateChecker.check(sonarProjectKey, sonarSourceBranch)
 
         val notifier = TeamCityNotifier(sonarUrl, sonarProjectKey, sonarSourceBranch, sonarTargetBranch)
@@ -76,6 +92,9 @@ class ReportGeneratorCommand : CliktCommand(
         const val SONAR_PROJECT_NAME_OPTION = "--sonar-project-name"
         const val SONAR_SOURCE_BRANCH_OPTION = "--sonar-source-branch"
         const val SONAR_TARGET_BRANCH_OPTION = "--sonar-target-branch"
+
+        const val QUALITY_GATE_MAX_RETRIES_OPTION = "--quality-gate-max-retries"
+        const val QUALITY_GATE_RETRY_DELAY_SECONDS_OPTION = "--quality-gate-retry-delay-seconds"
 
         const val SONAR_USERNAME_ENV = "SONAR_USERNAME"
         const val SONAR_PASSWORD_ENV = "SONAR_PASSWORD"

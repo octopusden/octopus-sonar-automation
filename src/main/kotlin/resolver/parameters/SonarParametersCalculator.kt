@@ -3,6 +3,7 @@ package org.octopusden.octopus.sonar.resolver.parameters
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
 import org.octopusden.octopus.sonar.dto.SonarParametersDTO
+import org.octopusden.octopus.sonar.dto.SonarServerParametersDTO
 import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
 import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
 import org.octopusden.octopus.sonar.util.SonarParameterBuilder
@@ -51,7 +52,9 @@ class SonarParametersCalculator(
         val projectContext = resolveProjectContext(resolvedVcs, sastOverride)
         val branchContext = resolveBranchContext(resolvedVcs, buildMode)
 
-        val sonarServer = sonarServerResolver.resolveSonarServer(componentName)
+        val sonarServer = sastOverride?.sonarServer
+            ?.let { resolveServerFromOverride(it) }
+            ?: sonarServerResolver.resolveSonarServer(componentName)
         val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
         val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
         val pluginBuildSystem = sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion)
@@ -87,6 +90,7 @@ class SonarParametersCalculator(
                 projectName = sastOverride.sonarProjectName
             )
         }
+
         return ProjectContext(
             projectKey = "${resolvedVcs.bbProjectKey}_${resolvedVcs.bbRepositoryKey}_$componentName",
             projectName = "${resolvedVcs.bbProjectKey}/${resolvedVcs.bbRepositoryKey}:$componentName"
@@ -120,6 +124,13 @@ class SonarParametersCalculator(
             sonarExtraParameters = SonarParameterBuilder.forBranch(sourceBranch, targetBranch)
         )
     }
+
+    private fun resolveServerFromOverride(serverOverride: String): SonarServerParametersDTO =
+        when (serverOverride.lowercase()) {
+            "community" -> SonarServerParametersDTO.COMMUNITY
+            "developer" -> SonarServerParametersDTO.DEVELOPER
+            else -> error("Unexpected sonarServer value '$serverOverride' — validation should have caught this at load time")
+        }
 
     private fun resolveBuildMode(sourceBranch: String): BuildMode {
         return if (sourceBranch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {

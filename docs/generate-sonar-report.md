@@ -26,6 +26,17 @@ The `QualityGateChecker` queries SonarQube for:
 | New issue count     | `issues/search` (new code)    | Unresolved issues in the new code period |
 | Failed metrics      | `measures/component`          | Rating metrics below target              |
 
+**Quality gate statuses:**
+
+| Status  | Meaning                                                                          |
+|---------|----------------------------------------------------------------------------------|
+| `OK`    | Gate passed                                                                      |
+| `WARN`  | Gate passed with warnings — treated as **passed** (same as `OK`)                 |
+| `ERROR` | Gate failed                                                                      |
+| `NONE`  | Gate not yet computed — checker retries up to `--quality-gate-max-retries` times |
+
+> **Pending gate (`NONE`):** SonarQube sometimes returns `NONE` immediately after an analysis completes, before it has finished computing the quality gate. The checker automatically retries, waiting `--quality-gate-retry-delay-seconds` seconds between attempts. If the status is still `NONE` after all retries, the build fails.
+
 **Metrics checked:**
 
 | Metric Key                                | Display Name        |
@@ -118,17 +129,19 @@ java -jar sonar-automation-<version>.jar generate-sonar-report \
   --sonar-target-branch=<branch>
 ```
 
-| Option                  | Required | Description                                           |
-|-------------------------|----------|-------------------------------------------------------|
-| `--sonar-server-url`    | Yes      | SonarQube server URL                                  |
-| `--component-name`      | Yes      | Component name                                        |
-| `--component-version`   | Yes      | Component version                                     |
-| `--sonar-project-key`   | Yes      | SonarQube project key (from `calculate-sonar-params`) |
-| `--sonar-project-name`  | Yes      | SonarQube project name (`PROJECT/repo:component`)     |
-| `--sonar-source-branch` | Yes      | Source branch being analysed                          |
-| `--sonar-target-branch` | Yes      | Target/base branch for comparison                     |
-| `env.SONAR_USERNAME`    | Yes      | SonarQube username                                    |
-| `env.SONAR_PASSWORD`    | Yes      | SonarQube password                                    |
+| Option                               | Required | Description                                           |
+|--------------------------------------|----------|-------------------------------------------------------|
+| `--sonar-server-url`                 | Yes      | SonarQube server URL                                  |
+| `--component-name`                   | Yes      | Component name                                        |
+| `--component-version`                | Yes      | Component version                                     |
+| `--sonar-project-key`                | Yes      | SonarQube project key (from `calculate-sonar-params`) |
+| `--sonar-project-name`               | Yes      | SonarQube project name (`PROJECT/repo:component`)     |
+| `--sonar-source-branch`              | Yes      | Source branch being analysed                          |
+| `--sonar-target-branch`              | Yes      | Target/base branch for comparison                     |
+| `--quality-gate-max-retries`         | No       | Retries when gate status is `NONE` (default: `5`)     |
+| `--quality-gate-retry-delay-seconds` | No       | Seconds between retries (default: `10`)               |
+| `env.SONAR_USERNAME`                 | Yes      | SonarQube username                                    |
+| `env.SONAR_PASSWORD`                 | Yes      | SonarQube password                                    |
 
 In practice this is invoked automatically by the `GenerateSonarReport` TeamCity metarunner, using parameters set by [`calculate-sonar-params`](calculate-sonar-parameters.md).
 
