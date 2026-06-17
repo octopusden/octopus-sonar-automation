@@ -19,7 +19,11 @@ object BranchConstants {
      * `%teamcity.pullRequest.*` parameters are not available for those builds.
      */
     fun isPullRequestBranch(branch: String): Boolean =
-        branch.startsWith(PULL_REQUEST_BRANCH_MARKER) &&
-        !branch.removePrefix(PULL_REQUEST_BRANCH_MARKER).contains('/')
+        branch.removePrefix(PULL_REQUEST_BRANCH_MARKER).let { prId ->
+            prId != branch &&
+            prId.isNotEmpty() &&
+            !prId.contains('/') &&
+            prId.all(Char::isDigit)
+        }
 }
 

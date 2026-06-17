@@ -36,11 +36,13 @@ class ReportGeneratorCommand : CliktCommand(
         QUALITY_GATE_MAX_RETRIES_OPTION,
         help = "Max retries when quality gate status is NONE (not yet computed)"
     ).int().default(20)
+        .check("$QUALITY_GATE_MAX_RETRIES_OPTION must be >= 0") { it >= 0 }
 
     private val qualityGateRetryDelaySeconds by option(
         QUALITY_GATE_RETRY_DELAY_SECONDS_OPTION,
         help = "Seconds to wait between quality gate status retries"
     ).int().default(5)
+        .check("$QUALITY_GATE_RETRY_DELAY_SECONDS_OPTION must be >= 0") { it >= 0 }
 
     override fun run() {
         val sonarClient = ClassicSonarClient(

@@ -138,8 +138,8 @@ java -jar sonar-automation-<version>.jar generate-sonar-report \
 | `--sonar-project-name`               | Yes      | SonarQube project name (`PROJECT/repo:component`)     |
 | `--sonar-source-branch`              | Yes      | Source branch being analysed                          |
 | `--sonar-target-branch`              | Yes      | Target/base branch for comparison                     |
-| `--quality-gate-max-retries`         | No       | Retries when gate status is `NONE` (default: `5`)     |
-| `--quality-gate-retry-delay-seconds` | No       | Seconds between retries (default: `10`)               |
+| `--quality-gate-max-retries`         | No       | Retries when gate status is `NONE` (default: `20`)    |
+| `--quality-gate-retry-delay-seconds` | No       | Seconds between retries (default: `5`)                |
 | `env.SONAR_USERNAME`                 | Yes      | SonarQube username                                    |
 | `env.SONAR_PASSWORD`                 | Yes      | SonarQube password                                    |
 
