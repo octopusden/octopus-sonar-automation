@@ -9,5 +9,17 @@ object BranchConstants {
 
     /** Default branch names to fall back on when no explicit default is configured. */
     val DEFAULT_BRANCH_CANDIDATES = listOf("main", "master")
+
+    /**
+     * Returns `true` when [branch] is a "native" TeamCity Pull Request build feature branch —
+     * i.e. exactly `pull-requests/<id>` with no further path segments.
+     *
+     * Branches with a suffix such as `pull-requests/<id>/from` (produced by a branch-filter
+     * specification rather than the TC Pull Request build feature) return `false`, because
+     * `%teamcity.pullRequest.*` parameters are not available for those builds.
+     */
+    fun isPullRequestBranch(branch: String): Boolean =
+        branch.startsWith(PULL_REQUEST_BRANCH_MARKER) &&
+        !branch.removePrefix(PULL_REQUEST_BRANCH_MARKER).contains('/')
 }
 
