@@ -18,11 +18,25 @@ These parameters are then picked up by the downstream Sonar metarunner.
 
 Components with SonarQube analysis already set up manually are supported via configuration files from the `RELENG/sonar-config` repository:
 
-| File                        | Purpose                                                                                  |
-|-----------------------------|------------------------------------------------------------------------------------------|
-| `applied-sast.json`         | Components with manually applied SonarQube project key and name overrides                |
-| `other-doc-components.txt`  | Documentation components that should be skipped for Sonar                                |
-| `mismatch-java-version.txt` | Java/Kotlin components registered as JDK 1.8 but actually using Java 17/21               |
+| File                        | Purpose                                                                                    |
+|-----------------------------|--------------------------------------------------------------------------------------------|
+| `applied-sast.json`         | Components with manually applied SonarQube project key, name, and optional server override |
+| `other-doc-components.txt`  | Documentation components that should be skipped for Sonar                                  |
+| `mismatch-java-version.txt` | Java/Kotlin components registered as JDK 1.8 but actually using Java 17/21                 |
+
+Each entry in `applied-sast.json` has the following shape:
+
+```json
+{
+  "my-component": {
+    "sonarProjectKey": "PROJECT_REPO_my-component",
+    "sonarProjectName": "PROJECT/REPO:my-component",
+    "sonarServer": "community"
+  }
+}
+```
+
+`sonarServer` is optional. When provided, it must be `"community"` or `"developer"` (case-insensitive) and overrides the automatic server selection based on language labels.
 
 ---
 
@@ -60,19 +74,26 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode   | Source Branch                        | Target Branch                                                  |
-|--------------|--------------------------------------|----------------------------------------------------------------|
-| Branch build | Branch from matched VCS settings     | Resolved via [Target Branch Analysis](#target-branch-analysis) |
-| PR build     | `pull-requests/<PR_NUMBER>` from VCS | `%teamcity.pullRequest.target.branch%`                         |
+| Build Mode                         | Source Branch                             | Target Branch                                                  |
+|------------------------------------|-------------------------------------------|----------------------------------------------------------------|
+| Branch build                       | Branch from matched VCS settings          | Resolved via [Target Branch Analysis](#target-branch-analysis) |
+| Native TC PR build                 | `pull-requests/<id>` from VCS             | `%teamcity.pullRequest.target.branch%`                         |
+| Branch-filter PR build             | `pull-requests/<id>/from` from VCS        | Resolved via [Target Branch Analysis](#target-branch-analysis) |
+
+**Native TC PR build** — triggered by the TeamCity *Pull Request* build feature. The branch is exactly `pull-requests/<id>` with no suffix. TeamCity injects `%teamcity.pullRequest.*` parameters, which are used for the target branch and for Sonar pull-request analysis parameters.
+
+**Branch-filter PR build** — triggered by a branch-filter specification that matches `pull-requests/*/from`. The branch carries a `/from` suffix and TeamCity does *not* inject `%teamcity.pullRequest.*` parameters. The tool detects this case and falls back to Target Branch Analysis for the target branch, using regular branch analysis parameters for Sonar.
 
 ### Sonar Server ID, URL, and Token
 
-Determined by the component's language labels from the Components Registry:
+Normally determined by the component's language labels from the Components Registry:
 
 | Language Labels                        | Server Edition       |
 |----------------------------------------|----------------------|
 | `c`, `cpp`, `objective_c`, `swift`     | Developer Edition    |
 | Everything else                        | Community Edition    |
+
+When `sonarServer` is set in `applied-sast.json` for the component, that value takes precedence over the automatic label-based selection. This is useful when a component carries `cpp` labels but actually runs its Sonar analysis on the Community Edition server. See [applied-sast.json override](#legacy-override-support) for details.
 
 ### Sonar Extra Parameters & Sonar Runner Extra Parameters
 

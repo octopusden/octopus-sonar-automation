@@ -12,10 +12,15 @@ import java.nio.file.Path
 
 /**
  * Sonar project override for applied-SAST and other pre-configured components.
+ *
+ * @param sonarServer Optional server override. When set, must be `"community"` or `"developer"` (case-insensitive).
+ *   Overrides the automatic server selection that is otherwise based on the component's language labels.
+ *   Useful when a component has `cpp` labels but actually runs on the Community Edition server.
  */
 data class SonarProjectOverride(
     val sonarProjectKey: String,
     val sonarProjectName: String,
+    val sonarServer: String? = null,
 )
 
 /**
@@ -176,7 +181,17 @@ class SonarExecutionResolver(
 
             logger.info("Loading Sonar applied-SAST config from: $externalFile")
             val content = Files.readString(externalFile)
-            return objectMapper.readValue(content, object : TypeReference<Map<String, SonarProjectOverride>>() {})
+            val result = objectMapper.readValue(content, object : TypeReference<Map<String, SonarProjectOverride>>() {})
+            result.forEach { (component, override) ->
+                val server = override.sonarServer
+                if (server != null && server.lowercase() !in setOf("community", "developer")) {
+                    error(
+                        "Invalid sonarServer value '$server' for component '$component' in $APPLIED_SAST_FILE. " +
+                        "Allowed values: 'community', 'developer'"
+                    )
+                }
+            }
+            return result
         }
 
         private fun loadList(configDir: Path, fileName: String): Set<String> {

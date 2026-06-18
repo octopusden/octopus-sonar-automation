@@ -3,8 +3,9 @@ package org.octopusden.octopus.sonar.resolver.parameters
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
 import org.octopusden.octopus.sonar.dto.SonarParametersDTO
+import org.octopusden.octopus.sonar.dto.SonarServerParametersDTO
 import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
-import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
+import org.octopusden.octopus.sonar.util.BranchConstants.isPullRequestBranch
 import org.octopusden.octopus.sonar.util.SonarParameterBuilder
 import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
@@ -34,8 +35,10 @@ class SonarParametersCalculator(
     /**
      * Computes all Sonar parameters for the current build.
      *
-     * Build mode is selected by checking whether the resolved branch contains
-     * `pull-requests/`.
+     * Build mode is selected via [BranchConstants.isPullRequestBranch]: a branch of the form
+     * `pull-requests/<id>` (no suffix) is a native TC PR build; `pull-requests/<id>/from`
+     * (branch-filter build) is treated as a regular branch because `%teamcity.pullRequest.*`
+     * parameters are not available for those builds.
      *
      * When applied-SAST override exists for the component, project key/name come
      * from that override. Branch resolution and extra parameters are identical
@@ -51,7 +54,9 @@ class SonarParametersCalculator(
         val projectContext = resolveProjectContext(resolvedVcs, sastOverride)
         val branchContext = resolveBranchContext(resolvedVcs, buildMode)
 
-        val sonarServer = sonarServerResolver.resolveSonarServer(componentName)
+        val sonarServer = sastOverride?.sonarServer
+            ?.let { resolveServerFromOverride(it) }
+            ?: sonarServerResolver.resolveSonarServer(componentName)
         val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
         val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
         val pluginBuildSystem = sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion)
@@ -87,6 +92,7 @@ class SonarParametersCalculator(
                 projectName = sastOverride.sonarProjectName
             )
         }
+
         return ProjectContext(
             projectKey = "${resolvedVcs.bbProjectKey}_${resolvedVcs.bbRepositoryKey}_$componentName",
             projectName = "${resolvedVcs.bbProjectKey}/${resolvedVcs.bbRepositoryKey}:$componentName"
@@ -121,8 +127,15 @@ class SonarParametersCalculator(
         )
     }
 
+    private fun resolveServerFromOverride(serverOverride: String): SonarServerParametersDTO =
+        when (serverOverride.lowercase()) {
+            "community" -> SonarServerParametersDTO.COMMUNITY
+            "developer" -> SonarServerParametersDTO.DEVELOPER
+            else -> error("Unexpected sonarServer value '$serverOverride' — validation should have caught this at load time")
+        }
+
     private fun resolveBuildMode(sourceBranch: String): BuildMode {
-        return if (sourceBranch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
+        return if (isPullRequestBranch(sourceBranch)) {
             BuildMode.PULL_REQUEST
         } else {
             BuildMode.REGULAR_BRANCH

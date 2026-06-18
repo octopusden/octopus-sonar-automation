@@ -10,9 +10,11 @@ import org.octopusden.octopus.sonar.client.dto.MeasuresResponseDTO
 import org.octopusden.octopus.sonar.client.dto.PagingDTO
 import org.octopusden.octopus.sonar.client.dto.QualityGateProjectStatusDTO
 import org.octopusden.octopus.sonar.client.dto.QualityGateResponseDTO
+import io.mockk.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class QualityGateCheckerTest {
@@ -140,5 +142,68 @@ class QualityGateCheckerTest {
         assertTrue(result.hasNewIssues)
         assertTrue(result.hasFailedMetrics)
         assertEquals(listOf("reliability"), result.failedMetrics)
+    }
+
+    // --- Quality gate WARN and NONE (pending) retry tests ---
+
+    @Test
+    fun `WARN quality gate status is treated as passed`() {
+        every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("WARN")
+        every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse()
+
+        val result = checker.check("proj", "master")
+
+        assertTrue(result.isQualityGatePassed)
+        assertEquals("WARN", result.qualityGateStatus)
+    }
+
+    @Test
+    fun `NONE status retries until OK and returns OK`() {
+        val fastChecker = QualityGateChecker(sonarClient, maxRetries = 3, retryDelaySeconds = 0)
+        every { sonarClient.getQualityGateStatus("master", "proj") } returnsMany listOf(
+            qualityGateResponse("NONE"),
+            qualityGateResponse("NONE"),
+            qualityGateResponse("OK"),
+        )
+        every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse()
+
+        val result = fastChecker.check("proj", "master")
+
+        assertTrue(result.isQualityGatePassed)
+        assertEquals("OK", result.qualityGateStatus)
+        verify(exactly = 3) { sonarClient.getQualityGateStatus("master", "proj") }
+    }
+
+    @Test
+    fun `NONE status retries until ERROR and returns ERROR`() {
+        val fastChecker = QualityGateChecker(sonarClient, maxRetries = 3, retryDelaySeconds = 0)
+        every { sonarClient.getQualityGateStatus("master", "proj") } returnsMany listOf(
+            qualityGateResponse("NONE"),
+            qualityGateResponse("ERROR"),
+        )
+        every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(5)
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse()
+
+        val result = fastChecker.check("proj", "master")
+
+        assertFalse(result.isQualityGatePassed)
+        assertEquals("ERROR", result.qualityGateStatus)
+        verify(exactly = 2) { sonarClient.getQualityGateStatus("master", "proj") }
+    }
+
+    @Test
+    fun `NONE status exhausts retries and throws exception`() {
+        val fastChecker = QualityGateChecker(sonarClient, maxRetries = 2, retryDelaySeconds = 0)
+        every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("NONE")
+
+        val ex = assertFailsWith<IllegalStateException> {
+            fastChecker.check("proj", "master")
+        }
+
+        assertTrue(ex.message!!.contains("NONE"))
+        // Called maxRetries+1 times total (initial attempt + 2 retries)
+        verify(exactly = 3) { sonarClient.getQualityGateStatus("master", "proj") }
     }
 }

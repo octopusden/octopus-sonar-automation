@@ -2,5 +2,10 @@
   "component-with-sast": {
     "sonarProjectKey": "PROJECT_component-with-sast",
     "sonarProjectName": "PROJECT/component-with-sast"
+  },
+  "component-with-server-override": {
+    "sonarProjectKey": "PROJECT_component-with-server-override",
+    "sonarProjectName": "PROJECT/component-with-server-override",
+    "sonarServer": "community"
   }
 }
