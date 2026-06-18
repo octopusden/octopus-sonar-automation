@@ -154,20 +154,6 @@ class TeamCityNotifierTest {
         assertTrue(messages[0].contains("pullRequest=99"))
     }
 
-    @Test
-    fun `pull-request with from suffix uses branch param, not pullRequest param`() {
-        // pull-requests/42/from comes from a branch-filter build, not the TC PR build feature,
-        // so %teamcity.pullRequest.* params don't exist — must use branch= in URLs
-        val prFromNotifier = TeamCityNotifier("https://sonar.example.com", "proj", "pull-requests/42/from", "master")
-        val result = QualityGateCheckResult("OK", newIssueCount = 2, failedMetrics = emptyList())
-
-        val messages = prFromNotifier.buildMessages(result)
-
-        assertEquals(1, messages.size)
-        assertFalse(messages[0].contains("pullRequest="), "branch-filter PR build must not use pullRequest param")
-        assertTrue(messages[0].contains("branch="), "branch-filter PR build must use branch param")
-    }
-
     // ── branchOrPrParam companion function ───────────────────────────────────
 
     @Test
@@ -181,18 +167,8 @@ class TeamCityNotifierTest {
     }
 
     @Test
-    fun `branchOrPrParam returns pullRequest param for native TC PR branch`() {
+    fun `branchOrPrParam returns pullRequest param for pull-requests branch`() {
         assertEquals("pullRequest=42", TeamCityNotifier.branchOrPrParam("pull-requests/42"))
-    }
-
-    @Test
-    fun `branchOrPrParam returns branch param for pull-requests branch with from suffix`() {
-        assertEquals("branch=pull-requests%2F42%2Ffrom", TeamCityNotifier.branchOrPrParam("pull-requests/42/from"))
-    }
-
-    @Test
-    fun `branchOrPrParam returns branch param for pull-requests branch with to suffix`() {
-        assertEquals("branch=pull-requests%2F42%2Fto", TeamCityNotifier.branchOrPrParam("pull-requests/42/to"))
     }
 
     // ── trailing slash on server URL ─────────────────────────────────────────

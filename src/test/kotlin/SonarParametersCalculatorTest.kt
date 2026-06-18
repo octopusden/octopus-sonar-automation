@@ -120,33 +120,6 @@ class SonarParametersCalculatorTest {
     }
 
     @Test
-    fun `pull-request branch with from suffix uses Target Branch Analysis not TC PR parameters`() {
-        // pull-requests/123/from comes from a branch-filter, not the TC PR build feature.
-        // %teamcity.pullRequest.* params don't exist for these builds, so we must use
-        // Target Branch Analysis and SonarParameterBuilder.forBranch instead of forPullRequest.
-        val resolvedVcs = resolvedVcs(branch = "pull-requests/123/from")
-        every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
-        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
-        every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
-        every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
-        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns false
-        every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
-        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns null
-
-        val result = calculator.calculate()
-
-        // Treated as a regular branch build — target branch from analysis, not from TC PR params
-        assertEquals("pull-requests/123/from", result.sonarSourceBranch)
-        assertEquals("main", result.sonarTargetBranch)
-        assertEquals(
-            SonarParameterBuilder.forBranch("pull-requests/123/from", "main"),
-            result.sonarExtraParameters
-        )
-        // targetBranchResolver must be called (regular branch mode)
-        verify(exactly = 1) { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) }
-    }
-
-    @Test
     fun `applied sast override on PR branch uses PR parameters like regular PR`() {
         val resolvedVcs = resolvedVcs(branch = "pull-requests/456")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs

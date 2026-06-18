@@ -2,7 +2,6 @@ package org.octopusden.octopus.sonar.resolver.report
 
 import org.octopusden.octopus.sonar.dto.ReportData
 import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
-import org.octopusden.octopus.sonar.util.BranchConstants.isPullRequestBranch
 import org.octopusden.octopus.sonar.dto.ReportHotspotItem
 import org.octopusden.octopus.sonar.dto.ReportIssueItem
 import org.apache.velocity.VelocityContext
@@ -175,7 +174,7 @@ class ReportHtmlRenderer {
 
         private fun branchParam(): String {
             val branch = data.sourceBranch
-            return if (isPullRequestBranch(branch)) {
+            return if (branch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
                 "pullRequest=${enc(branch.removePrefix(PULL_REQUEST_BRANCH_MARKER))}"
             } else {
                 "branch=${enc(branch)}"

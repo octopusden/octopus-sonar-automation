@@ -74,15 +74,10 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 
 ### Source & Target Branches
 
-| Build Mode                         | Source Branch                             | Target Branch                                                  |
-|------------------------------------|-------------------------------------------|----------------------------------------------------------------|
-| Branch build                       | Branch from matched VCS settings          | Resolved via [Target Branch Analysis](#target-branch-analysis) |
-| Native TC PR build                 | `pull-requests/<id>` from VCS             | `%teamcity.pullRequest.target.branch%`                         |
-| Branch-filter PR build             | `pull-requests/<id>/from` from VCS        | Resolved via [Target Branch Analysis](#target-branch-analysis) |
-
-**Native TC PR build** — triggered by the TeamCity *Pull Request* build feature. The branch is exactly `pull-requests/<id>` with no suffix. TeamCity injects `%teamcity.pullRequest.*` parameters, which are used for the target branch and for Sonar pull-request analysis parameters.
-
-**Branch-filter PR build** — triggered by a branch-filter specification that matches `pull-requests/*/from`. The branch carries a `/from` suffix and TeamCity does *not* inject `%teamcity.pullRequest.*` parameters. The tool detects this case and falls back to Target Branch Analysis for the target branch, using regular branch analysis parameters for Sonar.
+| Build Mode   | Source Branch                        | Target Branch                                                  |
+|--------------|--------------------------------------|----------------------------------------------------------------|
+| Branch build | Branch from matched VCS settings     | Resolved via [Target Branch Analysis](#target-branch-analysis) |
+| PR build     | `pull-requests/<PR_NUMBER>` from VCS | `%teamcity.pullRequest.target.branch%`                         |
 
 ### Sonar Server ID, URL, and Token
 

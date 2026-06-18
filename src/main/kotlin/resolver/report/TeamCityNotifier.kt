@@ -2,7 +2,6 @@ package org.octopusden.octopus.sonar.resolver.report
 
 import org.octopusden.octopus.sonar.dto.QualityGateCheckResult
 import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
-import org.octopusden.octopus.sonar.util.BranchConstants.isPullRequestBranch
 import org.octopusden.octopus.sonar.util.TeamCityEscaper
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -72,12 +71,10 @@ class TeamCityNotifier(
     companion object {
         /**
          * Translates a branch identifier into the correct URL query parameter.
-         *
-         * - Native TC PR branch (`pull-requests/<id>`, no suffix) → `"pullRequest=<id>"`
-         * - Everything else, including `pull-requests/<id>/from` builds → `"branch=<name>"`
+         * `"pull-requests/123"` → `"pullRequest=123"`, otherwise `"branch=<name>"`.
          */
         fun branchOrPrParam(branch: String): String {
-            return if (isPullRequestBranch(branch)) {
+            return if (branch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
                 "pullRequest=${URLEncoder.encode(branch.removePrefix(PULL_REQUEST_BRANCH_MARKER), StandardCharsets.UTF_8)}"
             } else {
                 "branch=${URLEncoder.encode(branch, StandardCharsets.UTF_8)}"
