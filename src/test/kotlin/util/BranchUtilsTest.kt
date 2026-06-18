@@ -2,12 +2,10 @@ package org.octopusden.octopus.sonar.util
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class BranchUtilsTest {
 
-    // ── normalizedBranch: prefix stripping ────────────────────────────────────
+    // ── prefix stripping ──────────────────────────────────────────────────────
 
     @Test
     fun `strips refs-heads prefix`() {
@@ -34,11 +32,28 @@ class BranchUtilsTest {
         assertEquals("feature/JIRA-123-my-feature", "feature/JIRA-123-my-feature".normalizedBranch())
     }
 
-    // ── normalizedBranch: trailing slash ──────────────────────────────────────
+    // ── suffix stripping ──────────────────────────────────────────────────────
+
+    @Test
+    fun `strips from suffix used in Bitbucket pull-request refs`() {
+        assertEquals("pull-requests/42", "pull-requests/42/from".normalizedBranch())
+    }
+
+    @Test
+    fun `strips to suffix used in Bitbucket pull-request refs`() {
+        assertEquals("pull-requests/42", "pull-requests/42/to".normalizedBranch())
+    }
 
     @Test
     fun `strips trailing slash`() {
         assertEquals("main", "main/".normalizedBranch())
+    }
+
+    // ── combined cases ────────────────────────────────────────────────────────
+
+    @Test
+    fun `keeps from suffix for non pull-request branches`() {
+        assertEquals("feature/abc/from", "refs/heads/feature/abc/from".normalizedBranch())
     }
 
     @Test
@@ -46,61 +61,8 @@ class BranchUtilsTest {
         assertEquals("main", "refs/heads/main/".normalizedBranch())
     }
 
-    // ── normalizedBranch: pull-request branches keep their suffix ─────────────
-
     @Test
-    fun `pull-request branch with from suffix is kept intact`() {
-        // /from suffix is preserved — callers use isPullRequestBranch() to distinguish
-        // native TC PR builds (pull-requests/<id>) from branch-filter builds (pull-requests/<id>/from)
-        assertEquals("pull-requests/42/from", "pull-requests/42/from".normalizedBranch())
-    }
-
-    @Test
-    fun `pull-request branch with to suffix is kept intact`() {
-        assertEquals("pull-requests/42/to", "pull-requests/42/to".normalizedBranch())
-    }
-
-    @Test
-    fun `native pull-request branch without suffix is unchanged`() {
-        assertEquals("pull-requests/42", "pull-requests/42".normalizedBranch())
-    }
-
-    @Test
-    fun `pull-request branch with refs-heads prefix and from suffix`() {
-        assertEquals("pull-requests/7/from", "refs/heads/pull-requests/7/from".normalizedBranch())
-    }
-
-    // ── normalizedBranch: non-PR branches with from-like segments ────────────
-
-    @Test
-    fun `from segment in non-PR branch is kept`() {
-        assertEquals("feature/abc/from", "refs/heads/feature/abc/from".normalizedBranch())
-    }
-
-    // ── isPullRequestBranch ───────────────────────────────────────────────────
-
-    @Test
-    fun `isPullRequestBranch returns true for native TC PR branch`() {
-        assertTrue(BranchConstants.isPullRequestBranch("pull-requests/42"))
-    }
-
-    @Test
-    fun `isPullRequestBranch returns false for pull-request branch with from suffix`() {
-        assertFalse(BranchConstants.isPullRequestBranch("pull-requests/42/from"))
-    }
-
-    @Test
-    fun `isPullRequestBranch returns false for pull-request branch with to suffix`() {
-        assertFalse(BranchConstants.isPullRequestBranch("pull-requests/42/to"))
-    }
-
-    @Test
-    fun `isPullRequestBranch returns false for regular branch`() {
-        assertFalse(BranchConstants.isPullRequestBranch("main"))
-    }
-
-    @Test
-    fun `isPullRequestBranch returns false for feature branch`() {
-        assertFalse(BranchConstants.isPullRequestBranch("feature/my-feature"))
+    fun `handles pull-request branch with full refs-heads prefix`() {
+        assertEquals("pull-requests/7", "refs/heads/pull-requests/7/from".normalizedBranch())
     }
 }
