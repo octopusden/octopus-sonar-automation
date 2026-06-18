@@ -35,7 +35,7 @@ class SonarParametersCalculator(
     /**
      * Computes all Sonar parameters for the current build.
      *
-     * Build mode is selected by checking whether the resolved branch contains
+     * Build mode is selected by checking whether the resolved branch starts with
      * `pull-requests/`.
      *
      * When applied-SAST override exists for the component, project key/name come
