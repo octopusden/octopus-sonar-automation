@@ -157,6 +157,18 @@ class SonarExecutionResolverTest {
     }
 
     @Test
+    fun `metarunner skipped for java component with javaVersion 25`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "25")
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+    }
+
+    @Test
+    fun `metarunner skipped for java component with future javaVersion beyond current LTS releases`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "29")
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+    }
+
+    @Test
     fun `metarunner skipped for java component in mismatch-java-version list`() {
         // "mismatch-java-component" is the first entry in mismatch-java-version.txt
         every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "21")
@@ -354,6 +366,14 @@ class SonarExecutionResolverTest {
     }
 
     @Test
+    fun `returns GRADLE for java gradle component with javaVersion 25`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "25", buildSystem = BuildSystem.GRADLE
+        )
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
     fun `returns GRADLE for java gradle component in mismatch list`() {
         every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns Fixtures.detailedComponent(
             labels = setOf("java"), javaVersion = "8", buildSystem = BuildSystem.GRADLE
@@ -375,6 +395,14 @@ class SonarExecutionResolverTest {
     fun `returns MAVEN for kotlin maven component with javaVersion 21`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
             labels = setOf("kotlin"), javaVersion = "21", buildSystem = BuildSystem.MAVEN
+        )
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+    }
+
+    @Test
+    fun `returns MAVEN for java maven component with javaVersion 25`() {
+        every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(
+            labels = setOf("java"), javaVersion = "25", buildSystem = BuildSystem.MAVEN
         )
         assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
     }

@@ -49,7 +49,7 @@ class SonarExecutionResolver(
      * - Component is archived
      * - Component is labelled `test-component`
      * - Component uses Java or Kotlin **and** uses a Gradle or Maven build system **and** either
-     *   its `javaVersion` build parameter is `17` or `21`, or it is listed in
+     *   its `javaVersion` build parameter is `17` or newer, or it is listed in
      *   `mismatch-java-version.txt` - those components are handled by the Gradle/Maven Sonar plugins
      */
     fun skipSonarMetarunnerExecution(componentName: String, componentVersion: String): Boolean {
@@ -103,7 +103,7 @@ class SonarExecutionResolver(
      * - Component is not archived or labelled `test-component`
      * - Component uses the **Gradle** or **Maven** build system
      * - Component is labelled `java` or `kotlin`
-     * - Component uses Java 17/21 or is listed in `mismatch-java-version.txt`
+     * - Component uses Java 17 or newer, or is listed in `mismatch-java-version.txt`
      */
     fun resolveSonarPluginBuildSystem(componentName: String, componentVersion: String): BuildSystem? {
         skipIfAppliedSast(componentName)?.let { return null }
@@ -162,12 +162,17 @@ class SonarExecutionResolver(
     private fun DetailedComponent.isJavaOrKotlin(): Boolean =
         labels.contains("java") || labels.contains("kotlin")
 
-    private fun DetailedComponent.isModernJava(): Boolean =
-        buildParameters?.javaVersion == "17" || buildParameters?.javaVersion == "21"
+    private fun DetailedComponent.isModernJava(): Boolean {
+        val version = buildParameters?.javaVersion?.trim()?.toIntOrNull() ?: return false
+        return version >= MIN_MODERN_JAVA_VERSION
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(SonarExecutionResolver::class.java)
         private val objectMapper: ObjectMapper = jacksonObjectMapper()
+
+        /** Minimum `javaVersion` build parameter considered a "modern" JDK to build with Sonar plugin. */
+        private const val MIN_MODERN_JAVA_VERSION = 17
 
         private const val APPLIED_SAST_FILE = "applied-sast.json"
         private const val OTHER_DOC_FILE = "other-doc-components.txt"

@@ -22,7 +22,7 @@ Components with SonarQube analysis already set up manually are supported via con
 |-----------------------------|--------------------------------------------------------------------------------------------|
 | `applied-sast.json`         | Components with manually applied SonarQube project key, name, and optional server override |
 | `other-doc-components.txt`  | Documentation components that should be skipped for Sonar                                  |
-| `mismatch-java-version.txt` | Java/Kotlin components registered as JDK 1.8 but actually using Java 17/21                 |
+| `mismatch-java-version.txt` | Java/Kotlin components registered as JDK 1.8 but actually using Java 17 or newer            |
 
 Each entry in `applied-sast.json` has the following shape:
 
@@ -104,7 +104,7 @@ The metarunner scan is **skipped** when any of the following hold:
 - Component name starts with `doc-` or `doc_` (case-insensitive), or is listed in `other-doc-components.txt`
 - Component is archived
 - Component is labelled `test-component`
-- Java/Kotlin component using a **Gradle or Maven** build system and JDK 17/21 or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
+- Java/Kotlin component using a **Gradle or Maven** build system and JDK 17 or newer, or listed in `mismatch-java-version.txt` (handled by Gradle/Maven plugin)
 
 ### Skip Sonar Report Generation
 
@@ -130,7 +130,7 @@ The plugin task is set (non-empty) only when **all** of the following conditions
 - Component is **not** labelled `test-component`
 - Component uses the **Gradle** or **Maven** build system
 - Component is labelled `java` or `kotlin`
-- Component uses Java version **17** or **21**, or is listed in `mismatch-java-version.txt`
+- Component uses Java version **17 or newer**, or is listed in `mismatch-java-version.txt`
 
 Otherwise it is set to an **empty string**.
 
