@@ -64,7 +64,7 @@ The parameter value must contain at minimum:
 
 #### `SONAR_TASK`
 
-The `CalculateSonarParameters` metarunner also sets `SONAR_TASK`. This parameter is set to a reference to a TeamCity parameter: `%SONAR_GRADLE_TASK%` for Gradle components and `%SONAR_MAVEN_GOAL%` for Maven components, when the component is Java/Kotlin-based and uses a modern Java version (17 or 21, including components in the mismatch-java-version list). Otherwise, it is set to an empty string.
+The `CalculateSonarParameters` metarunner also sets `SONAR_TASK`. This parameter is set to a reference to a TeamCity parameter: `%SONAR_GRADLE_TASK%` for Gradle components and `%SONAR_MAVEN_GOAL%` for Maven components, when the component is Java/Kotlin-based and uses a modern Java version (17 or newer, including components in the mismatch-java-version list). Otherwise, it is set to an empty string.
 
 This allows composing it into the default `GRADLE_TASK` TeamCity parameter so that the Sonar analysis task is included only when applicable:
 
