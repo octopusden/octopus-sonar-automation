@@ -7,12 +7,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ReportDataMapperTest {
-
     private val mapper = ReportDataMapper()
 
     private fun issueWith(
         severity: String = "MAJOR",
-        impacts: List<IssueImpactDTO> = emptyList()
+        impacts: List<IssueImpactDTO> = emptyList(),
     ) = IssueDTO(
         key = "K1",
         rule = "rule:1",
@@ -31,24 +30,27 @@ class ReportDataMapperTest {
     )
 
     private fun mapSingleIssue(issue: IssueDTO) =
-        mapper.map(
-            fetchedData = ReportDataFetcher.FetchedData(
-                effortTotal = 0,
-                issues = listOf(issue),
-                totalIssues = 1,
-                issuesTruncated = false,
-                hotspots = emptyList(),
-                totalHotspots = 0,
-                hotspotsTruncated = false,
-                qualityGateStatus = "OK",
-            ),
-            componentName = "comp",
-            componentVersion = "1.0",
-            sonarProjectName = "proj",
-            sonarServerUrl = "https://sonar.example.com",
-            sonarProjectKey = "proj",
-            sourceBranch = "main",
-        ).issues.single()
+        mapper
+            .map(
+                fetchedData =
+                    ReportDataFetcher.FetchedData(
+                        effortTotal = 0,
+                        issues = listOf(issue),
+                        totalIssues = 1,
+                        issuesTruncated = false,
+                        hotspots = emptyList(),
+                        totalHotspots = 0,
+                        hotspotsTruncated = false,
+                        qualityGateStatus = "OK",
+                    ),
+                componentName = "comp",
+                componentVersion = "1.0",
+                sonarProjectName = "proj",
+                sonarServerUrl = "https://sonar.example.com",
+                sonarProjectKey = "proj",
+                sourceBranch = "main",
+            ).issues
+            .single()
 
     @Test
     fun `map issue with empty impacts falls back to legacy severity mapping`() {
@@ -59,10 +61,11 @@ class ReportDataMapperTest {
 
     @Test
     fun `map issue with impacts uses first impact severity`() {
-        val impacts = listOf(
-            IssueImpactDTO(softwareQuality = "MAINTAINABILITY", severity = "LOW"),
-            IssueImpactDTO(softwareQuality = "RELIABILITY", severity = "HIGH"),
-        )
+        val impacts =
+            listOf(
+                IssueImpactDTO(softwareQuality = "MAINTAINABILITY", severity = "LOW"),
+                IssueImpactDTO(softwareQuality = "RELIABILITY", severity = "HIGH"),
+            )
         val result = mapSingleIssue(issueWith(severity = "CRITICAL", impacts = impacts))
         assertEquals("LOW", result.severity, "Should use first impact's severity, not legacy")
         assertEquals("MAINTAINABILITY", result.softwareQuality)

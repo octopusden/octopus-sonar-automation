@@ -1,17 +1,16 @@
 package org.octopusden.octopus.sonar.resolver
 
-import org.octopusden.octopus.sonar.dto.SonarServerParametersDTO
-import org.octopusden.octopus.sonar.resolver.parameters.SonarServerResolver
-import org.octopusden.octopus.sonar.test.Fixtures
 import io.mockk.every
 import io.mockk.mockk
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
+import org.octopusden.octopus.sonar.dto.SonarServerParametersDTO
+import org.octopusden.octopus.sonar.resolver.parameters.SonarServerResolver
+import org.octopusden.octopus.sonar.test.Fixtures
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SonarServerResolverTest {
-
     private lateinit var crsClient: ComponentsRegistryServiceClient
     private lateinit var resolver: SonarServerResolver
 

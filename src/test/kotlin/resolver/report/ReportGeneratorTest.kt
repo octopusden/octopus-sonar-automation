@@ -1,9 +1,9 @@
 package org.octopusden.octopus.sonar.resolver.report
 
-import org.octopusden.octopus.sonar.client.SonarClient
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.octopusden.octopus.sonar.client.SonarClient
 import org.octopusden.octopus.sonar.client.dto.HotspotDTO
 import org.octopusden.octopus.sonar.client.dto.HotspotsResponseDTO
 import org.octopusden.octopus.sonar.client.dto.IssueDTO
@@ -15,12 +15,11 @@ import org.octopusden.octopus.sonar.client.dto.QualityGateResponseDTO
 import java.io.File
 import java.util.Date
 import kotlin.test.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ReportGeneratorTest {
-
     private val sonarClient = mockk<SonarClient>()
 
     private fun emptyPaging() = PagingDTO(pageIndex = 1, pageSize = 500, total = 0)
@@ -43,9 +42,10 @@ class ReportGeneratorTest {
         hotspots = hotspots,
     )
 
-    private fun qualityGateResponse(status: String = "OK") = QualityGateResponseDTO(
-        projectStatus = QualityGateProjectStatusDTO(status = status)
-    )
+    private fun qualityGateResponse(status: String = "OK") =
+        QualityGateResponseDTO(
+            projectStatus = QualityGateProjectStatusDTO(status = status),
+        )
 
     private fun sampleIssue(
         key: String = "AX1",
@@ -101,15 +101,16 @@ class ReportGeneratorTest {
         val outputDir = createTempDir("report-test")
         try {
             val generator = ReportGenerator(sonarClient)
-            val file = generator.generate(
-                projectKey = "proj",
-                branch = "master",
-                componentName = "my-service",
-                componentVersion = "1.0.0",
-                sonarProjectName = "PS/my-service:module",
-                sonarServerUrl = "https://sonar.example.com",
-                outputDir = outputDir,
-            )
+            val file =
+                generator.generate(
+                    projectKey = "proj",
+                    branch = "master",
+                    componentName = "my-service",
+                    componentVersion = "1.0.0",
+                    sonarProjectName = "PS/my-service:module",
+                    sonarServerUrl = "https://sonar.example.com",
+                    outputDir = outputDir,
+                )
 
             assertTrue(file.exists())
             assertEquals("my-service-1.0.0-sast-report.html", file.name)
@@ -134,15 +135,16 @@ class ReportGeneratorTest {
         val outputDir = createTempDir("report-test")
         try {
             val generator = ReportGenerator(sonarClient)
-            val file = generator.generate(
-                projectKey = "proj",
-                branch = "master",
-                componentName = "my-service",
-                componentVersion = "1.0.0",
-                sonarProjectName = "PS/my-service:module",
-                sonarServerUrl = "https://sonar.example.com",
-                outputDir = outputDir,
-            )
+            val file =
+                generator.generate(
+                    projectKey = "proj",
+                    branch = "master",
+                    componentName = "my-service",
+                    componentVersion = "1.0.0",
+                    sonarProjectName = "PS/my-service:module",
+                    sonarServerUrl = "https://sonar.example.com",
+                    outputDir = outputDir,
+                )
 
             assertTrue(file.exists())
             val content = file.readText()
@@ -164,15 +166,16 @@ class ReportGeneratorTest {
         val outputDir = createTempDir("report-test")
         try {
             val generator = ReportGenerator(sonarClient)
-            val file = generator.generate(
-                projectKey = "proj",
-                branch = "master",
-                componentName = "my-service",
-                componentVersion = "2.0.0",
-                sonarProjectName = "PS/my-service",
-                sonarServerUrl = "https://sonar.example.com",
-                outputDir = outputDir,
-            )
+            val file =
+                generator.generate(
+                    projectKey = "proj",
+                    branch = "master",
+                    componentName = "my-service",
+                    componentVersion = "2.0.0",
+                    sonarProjectName = "PS/my-service",
+                    sonarServerUrl = "https://sonar.example.com",
+                    outputDir = outputDir,
+                )
 
             val content = file.readText()
             assertTrue(content.contains("Quality Gate Failed"), "Should show failed quality gate")
@@ -187,31 +190,34 @@ class ReportGeneratorTest {
         val page1Issues = (1..500).map { sampleIssue(key = "AX$it") }
         val page2Issues = (501..600).map { sampleIssue(key = "AX$it") }
 
-        every { sonarClient.searchIssues(any(), any(), any(), 500, 1) } returns IssuesResponseDTO(
-            paging = PagingDTO(pageIndex = 1, pageSize = 500, total = 600),
-            effortTotal = 100,
-            issues = page1Issues,
-        )
-        every { sonarClient.searchIssues(any(), any(), any(), 500, 2) } returns IssuesResponseDTO(
-            paging = PagingDTO(pageIndex = 2, pageSize = 500, total = 600),
-            effortTotal = 100,
-            issues = page2Issues,
-        )
+        every { sonarClient.searchIssues(any(), any(), any(), 500, 1) } returns
+            IssuesResponseDTO(
+                paging = PagingDTO(pageIndex = 1, pageSize = 500, total = 600),
+                effortTotal = 100,
+                issues = page1Issues,
+            )
+        every { sonarClient.searchIssues(any(), any(), any(), 500, 2) } returns
+            IssuesResponseDTO(
+                paging = PagingDTO(pageIndex = 2, pageSize = 500, total = 600),
+                effortTotal = 100,
+                issues = page2Issues,
+            )
         every { sonarClient.searchHotspots(any(), any(), any(), any(), any()) } returns hotspotResponse()
         every { sonarClient.getQualityGateStatus(any(), any()) } returns qualityGateResponse("OK")
 
         val outputDir = createTempDir("report-test")
         try {
             val generator = ReportGenerator(sonarClient)
-            val file = generator.generate(
-                projectKey = "proj",
-                branch = "master",
-                componentName = "big-project",
-                componentVersion = "3.0.0",
-                sonarProjectName = "PS/big-project",
-                sonarServerUrl = "https://sonar.example.com",
-                outputDir = outputDir,
-            )
+            val file =
+                generator.generate(
+                    projectKey = "proj",
+                    branch = "master",
+                    componentName = "big-project",
+                    componentVersion = "3.0.0",
+                    sonarProjectName = "PS/big-project",
+                    sonarServerUrl = "https://sonar.example.com",
+                    outputDir = outputDir,
+                )
 
             assertTrue(file.exists())
             verify(exactly = 1) { sonarClient.searchIssues(any(), any(), any(), 500, 1) }
@@ -226,20 +232,22 @@ class ReportGeneratorTest {
 
     @Test
     fun `stops at 10000 result limit and shows truncation notice`() {
-        val maxResults = ReportDataFetcher.SONAR_MAX_RESULTS   // 10_000
+        val maxResults = ReportDataFetcher.SONAR_MAX_RESULTS // 10_000
         val pageSize = 500
-        val totalOnSonar = 12_000   // exceeds the limit
-        val totalPages = maxResults / pageSize   // 20 pages → exactly 10,000 fetched
+        val totalOnSonar = 12_000 // exceeds the limit
+        val totalPages = maxResults / pageSize // 20 pages → exactly 10,000 fetched
 
         // Mock all 20 pages
         for (page in 1..totalPages) {
-            val pageIssues = ((page - 1) * pageSize + 1..page * pageSize)
-                .map { sampleIssue(key = "AX$it") }
-            every { sonarClient.searchIssues(any(), any(), any(), pageSize, page) } returns IssuesResponseDTO(
-                paging = PagingDTO(pageIndex = page, pageSize = pageSize, total = totalOnSonar),
-                effortTotal = page * 100,
-                issues = pageIssues,
-            )
+            val pageIssues =
+                ((page - 1) * pageSize + 1..page * pageSize)
+                    .map { sampleIssue(key = "AX$it") }
+            every { sonarClient.searchIssues(any(), any(), any(), pageSize, page) } returns
+                IssuesResponseDTO(
+                    paging = PagingDTO(pageIndex = page, pageSize = pageSize, total = totalOnSonar),
+                    effortTotal = page * 100,
+                    issues = pageIssues,
+                )
         }
         // Page 21 must never be called — if it is, the mock throws an unexpected call error
         every { sonarClient.searchHotspots(any(), any(), any(), any(), any()) } returns hotspotResponse()
@@ -248,15 +256,16 @@ class ReportGeneratorTest {
         val outputDir = createTempDir("report-test")
         try {
             val generator = ReportGenerator(sonarClient)
-            val file = generator.generate(
-                projectKey = "proj",
-                branch = "master",
-                componentName = "big-project",
-                componentVersion = "5.0.0",
-                sonarProjectName = "PS/big-project",
-                sonarServerUrl = "https://sonar.example.com",
-                outputDir = outputDir,
-            )
+            val file =
+                generator.generate(
+                    projectKey = "proj",
+                    branch = "master",
+                    componentName = "big-project",
+                    componentVersion = "5.0.0",
+                    sonarProjectName = "PS/big-project",
+                    sonarServerUrl = "https://sonar.example.com",
+                    outputDir = outputDir,
+                )
 
             assertTrue(file.exists())
 
@@ -278,32 +287,35 @@ class ReportGeneratorTest {
         val maxResults = ReportDataFetcher.SONAR_MAX_RESULTS
         val pageSize = 500
         val totalOnSonar = 11_500
-        val totalPages = maxResults / pageSize   // 20 pages
+        val totalPages = maxResults / pageSize // 20 pages
 
         every { sonarClient.searchIssues(any(), any(), any(), any(), any()) } returns issueResponse()
 
         for (page in 1..totalPages) {
-            val pageHotspots = ((page - 1) * pageSize + 1..page * pageSize)
-                .map { sampleHotspot(key = "HS$it") }
-            every { sonarClient.searchHotspots(any(), any(), any(), pageSize, page) } returns HotspotsResponseDTO(
-                paging = PagingDTO(pageIndex = page, pageSize = pageSize, total = totalOnSonar),
-                hotspots = pageHotspots,
-            )
+            val pageHotspots =
+                ((page - 1) * pageSize + 1..page * pageSize)
+                    .map { sampleHotspot(key = "HS$it") }
+            every { sonarClient.searchHotspots(any(), any(), any(), pageSize, page) } returns
+                HotspotsResponseDTO(
+                    paging = PagingDTO(pageIndex = page, pageSize = pageSize, total = totalOnSonar),
+                    hotspots = pageHotspots,
+                )
         }
         every { sonarClient.getQualityGateStatus(any(), any()) } returns qualityGateResponse("OK")
 
         val outputDir = createTempDir("report-test")
         try {
             val generator = ReportGenerator(sonarClient)
-            val file = generator.generate(
-                projectKey = "proj",
-                branch = "master",
-                componentName = "hotspot-heavy",
-                componentVersion = "1.0.0",
-                sonarProjectName = "PS/hotspot-heavy",
-                sonarServerUrl = "https://sonar.example.com",
-                outputDir = outputDir,
-            )
+            val file =
+                generator.generate(
+                    projectKey = "proj",
+                    branch = "master",
+                    componentName = "hotspot-heavy",
+                    componentVersion = "1.0.0",
+                    sonarProjectName = "PS/hotspot-heavy",
+                    sonarServerUrl = "https://sonar.example.com",
+                    outputDir = outputDir,
+                )
 
             assertTrue(file.exists())
             verify(exactly = 0) { sonarClient.searchHotspots(any(), any(), any(), pageSize, 21) }
@@ -322,4 +334,3 @@ class ReportGeneratorTest {
         return dir
     }
 }
-

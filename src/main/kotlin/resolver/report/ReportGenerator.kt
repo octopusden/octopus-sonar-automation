@@ -37,15 +37,16 @@ class ReportGenerator(
     ): File {
         val fetchedData = fetcher.fetch(projectKey, branch)
 
-        val reportData = mapper.map(
-            fetchedData = fetchedData,
-            componentName = componentName,
-            componentVersion = componentVersion,
-            sonarProjectName = sonarProjectName,
-            sonarServerUrl = sonarServerUrl,
-            sonarProjectKey = projectKey,
-            sourceBranch = branch
-        )
+        val reportData =
+            mapper.map(
+                fetchedData = fetchedData,
+                componentName = componentName,
+                componentVersion = componentVersion,
+                sonarProjectName = sonarProjectName,
+                sonarServerUrl = sonarServerUrl,
+                sonarProjectKey = projectKey,
+                sourceBranch = branch,
+            )
 
         val html = renderer.render(reportData)
 

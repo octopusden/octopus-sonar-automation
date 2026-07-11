@@ -10,4 +10,3 @@ object BranchConstants {
     /** Default branch names to fall back on when no explicit default is configured. */
     val DEFAULT_BRANCH_CANDIDATES = listOf("main", "master")
 }
-

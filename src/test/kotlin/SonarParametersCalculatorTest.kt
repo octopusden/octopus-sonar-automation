@@ -1,5 +1,10 @@
 package org.octopusden.octopus.sonar
 
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.CommitStampDTO
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
@@ -11,11 +16,6 @@ import org.octopusden.octopus.sonar.resolver.parameters.SonarProjectOverride
 import org.octopusden.octopus.sonar.resolver.parameters.SonarServerResolver
 import org.octopusden.octopus.sonar.resolver.parameters.TargetBranchResolver
 import org.octopusden.octopus.sonar.util.SonarParameterBuilder
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
-import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
-import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -24,7 +24,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SonarParametersCalculatorTest {
-
     private lateinit var teamcityClient: TeamcityRestClient
     private lateinit var crsClient: ClassicComponentsRegistryServiceClient
     private lateinit var vcsFacadeClient: ClassicVcsFacadeClient
@@ -47,19 +46,22 @@ class SonarParametersCalculatorTest {
         sonarServerResolver = mockk()
         sonarExecutionResolver = mockk()
 
-        calculator = SonarParametersCalculator(
-            teamcityClient = teamcityClient,
-            crsClient = crsClient,
-            vcsFacadeClient = vcsFacadeClient,
-            componentName = "my-component",
-            componentVersion = "1.0.0",
-            teamcityBuildId = 42,
-            sonarConfigDir = java.nio.file.Path.of("/unused"),
-            commitStampResolver = commitStampResolver,
-            targetBranchResolver = targetBranchResolver,
-            sonarServerResolver = sonarServerResolver,
-            sonarExecutionResolver = sonarExecutionResolver
-        )
+        calculator =
+            SonarParametersCalculator(
+                teamcityClient = teamcityClient,
+                crsClient = crsClient,
+                vcsFacadeClient = vcsFacadeClient,
+                componentName = "my-component",
+                componentVersion = "1.0.0",
+                teamcityBuildId = 42,
+                sonarConfigDir =
+                    java.nio.file.Path
+                        .of("/unused"),
+                commitStampResolver = commitStampResolver,
+                targetBranchResolver = targetBranchResolver,
+                sonarServerResolver = sonarServerResolver,
+                sonarExecutionResolver = sonarExecutionResolver,
+            )
     }
 
     @Test
@@ -81,7 +83,7 @@ class SonarParametersCalculatorTest {
         assertEquals("main", result.sonarTargetBranch)
         assertEquals(
             SonarParameterBuilder.forBranch("feature/abc", "main"),
-            result.sonarExtraParameters
+            result.sonarExtraParameters,
         )
         assertEquals(SonarServerParametersDTO.COMMUNITY.id, result.sonarServerId)
         assertEquals(SonarServerParametersDTO.COMMUNITY.url, result.sonarServerUrl)
@@ -111,9 +113,9 @@ class SonarParametersCalculatorTest {
             SonarParameterBuilder.forPullRequest(
                 "%teamcity.pullRequest.number%",
                 "%teamcity.pullRequest.source.branch%",
-                "%teamcity.pullRequest.target.branch%"
+                "%teamcity.pullRequest.target.branch%",
             ),
-            result.sonarExtraParameters
+            result.sonarExtraParameters,
         )
 
         verify(exactly = 0) { targetBranchResolver.findTargetBranch(any(), any()) }
@@ -123,10 +125,11 @@ class SonarParametersCalculatorTest {
     fun `applied sast override on PR branch uses PR parameters like regular PR`() {
         val resolvedVcs = resolvedVcs(branch = "pull-requests/456")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
-        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
-            sonarProjectKey = "OVERRIDE_KEY",
-            sonarProjectName = "OVERRIDE/NAME"
-        )
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns
+            SonarProjectOverride(
+                sonarProjectKey = "OVERRIDE_KEY",
+                sonarProjectName = "OVERRIDE/NAME",
+            )
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns true
@@ -142,9 +145,9 @@ class SonarParametersCalculatorTest {
             SonarParameterBuilder.forPullRequest(
                 "%teamcity.pullRequest.number%",
                 "%teamcity.pullRequest.source.branch%",
-                "%teamcity.pullRequest.target.branch%"
+                "%teamcity.pullRequest.target.branch%",
             ),
-            result.sonarExtraParameters
+            result.sonarExtraParameters,
         )
 
         verify(exactly = 0) { targetBranchResolver.findTargetBranch(any(), any()) }
@@ -154,10 +157,11 @@ class SonarParametersCalculatorTest {
     fun `applied sast override on feature branch produces branch parameters like regular build`() {
         val resolvedVcs = resolvedVcs(branch = "feature/sast-test")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
-        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
-            sonarProjectKey = "OVERRIDE_KEY",
-            sonarProjectName = "OVERRIDE/NAME"
-        )
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns
+            SonarProjectOverride(
+                sonarProjectKey = "OVERRIDE_KEY",
+                sonarProjectName = "OVERRIDE/NAME",
+            )
         every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
@@ -172,7 +176,7 @@ class SonarParametersCalculatorTest {
         assertEquals("main", result.sonarTargetBranch)
         assertEquals(
             SonarParameterBuilder.forBranch("feature/sast-test", "main"),
-            result.sonarExtraParameters
+            result.sonarExtraParameters,
         )
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(any(), any()) }
@@ -182,10 +186,11 @@ class SonarParametersCalculatorTest {
     fun `applied sast override on production branch produces branch parameters like regular build`() {
         val resolvedVcs = resolvedVcs(branch = "main")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
-        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
-            sonarProjectKey = "OVERRIDE_KEY",
-            sonarProjectName = "OVERRIDE/NAME"
-        )
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns
+            SonarProjectOverride(
+                sonarProjectKey = "OVERRIDE_KEY",
+                sonarProjectName = "OVERRIDE/NAME",
+            )
         every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
@@ -198,7 +203,7 @@ class SonarParametersCalculatorTest {
         assertEquals("main", result.sonarTargetBranch)
         assertEquals(
             SonarParameterBuilder.forBranch("main", "main"),
-            result.sonarExtraParameters
+            result.sonarExtraParameters,
         )
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(any(), any()) }
@@ -208,10 +213,11 @@ class SonarParametersCalculatorTest {
     fun `applied sast override on feature branch resolves target and produces branch parameters`() {
         val resolvedVcs = resolvedVcs(branch = "feature/hotfix-1")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
-        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
-            sonarProjectKey = "OVERRIDE_KEY",
-            sonarProjectName = "OVERRIDE/NAME"
-        )
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns
+            SonarProjectOverride(
+                sonarProjectKey = "OVERRIDE_KEY",
+                sonarProjectName = "OVERRIDE/NAME",
+            )
         every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
         every { sonarServerResolver.resolveSonarServer("my-component") } returns SonarServerParametersDTO.COMMUNITY
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
@@ -224,22 +230,24 @@ class SonarParametersCalculatorTest {
         assertEquals("main", result.sonarTargetBranch)
         assertEquals(
             SonarParameterBuilder.forBranch("feature/hotfix-1", "main"),
-            result.sonarExtraParameters
+            result.sonarExtraParameters,
         )
 
         verify(exactly = 1) { targetBranchResolver.findTargetBranch(any(), any()) }
     }
 
-    private fun resolvedVcs(branch: String): ResolvedVCSDTO = ResolvedVCSDTO(
-        commit = CommitStampDTO(
-            cid = "abc123",
-            branch = branch,
-            vcsUrl = "ssh://git@bitbucket.example.com/MYPROJ/my-repo.git"
-        ),
-        defaultBranches = listOf("main", "master"),
-        bbProjectKey = "MYPROJ",
-        bbRepositoryKey = "my-repo"
-    )
+    private fun resolvedVcs(branch: String): ResolvedVCSDTO =
+        ResolvedVCSDTO(
+            commit =
+                CommitStampDTO(
+                    cid = "abc123",
+                    branch = branch,
+                    vcsUrl = "ssh://git@bitbucket.example.com/MYPROJ/my-repo.git",
+                ),
+            defaultBranches = listOf("main", "master"),
+            bbProjectKey = "MYPROJ",
+            bbRepositoryKey = "my-repo",
+        )
 
     @Test
     fun `production branch build sets source and target to same branch`() {
@@ -258,7 +266,7 @@ class SonarParametersCalculatorTest {
         assertEquals("main", result.sonarTargetBranch)
         assertEquals(
             SonarParameterBuilder.forBranch("main", "main"),
-            result.sonarExtraParameters
+            result.sonarExtraParameters,
         )
         assertEquals("%SONAR_GRADLE_TASK%", result.sonarPluginTask)
     }
@@ -317,11 +325,12 @@ class SonarParametersCalculatorTest {
     fun `sonarServer override in applied-sast forces Community and skips server resolver`() {
         val resolvedVcs = resolvedVcs(branch = "main")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
-        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
-            sonarProjectKey = "OVERRIDE_KEY",
-            sonarProjectName = "OVERRIDE/NAME",
-            sonarServer = "community"
-        )
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns
+            SonarProjectOverride(
+                sonarProjectKey = "OVERRIDE_KEY",
+                sonarProjectName = "OVERRIDE/NAME",
+                sonarServer = "community",
+            )
         every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
@@ -340,11 +349,12 @@ class SonarParametersCalculatorTest {
     fun `sonarServer override in applied-sast forces Developer and skips server resolver`() {
         val resolvedVcs = resolvedVcs(branch = "main")
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
-        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns SonarProjectOverride(
-            sonarProjectKey = "OVERRIDE_KEY",
-            sonarProjectName = "OVERRIDE/NAME",
-            sonarServer = "developer"
-        )
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns
+            SonarProjectOverride(
+                sonarProjectKey = "OVERRIDE_KEY",
+                sonarProjectName = "OVERRIDE/NAME",
+                sonarServer = "developer",
+            )
         every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, resolvedVcs.defaultBranches) } returns "main"
         every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0") } returns true
         every { sonarExecutionResolver.skipSonarReportGeneration("my-component") } returns false
@@ -360,12 +370,13 @@ class SonarParametersCalculatorTest {
 
     @Test
     fun `empty defaultBranches falls back to default candidates`() {
-        val resolvedVcs = ResolvedVCSDTO(
-            commit = CommitStampDTO("abc123", "feature/xyz", "ssh://git@bitbucket.example.com/MYPROJ/my-repo.git"),
-            defaultBranches = emptyList(),
-            bbProjectKey = "MYPROJ",
-            bbRepositoryKey = "my-repo"
-        )
+        val resolvedVcs =
+            ResolvedVCSDTO(
+                commit = CommitStampDTO("abc123", "feature/xyz", "ssh://git@bitbucket.example.com/MYPROJ/my-repo.git"),
+                defaultBranches = emptyList(),
+                bbProjectKey = "MYPROJ",
+                bbRepositoryKey = "my-repo",
+            )
         every { commitStampResolver.resolve("my-component", "1.0.0", 42) } returns resolvedVcs
         every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns null
         every { targetBranchResolver.findTargetBranch(resolvedVcs.commit, listOf("main", "master")) } returns "main"

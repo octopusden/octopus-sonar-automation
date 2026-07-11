@@ -37,5 +37,5 @@ data class SonarParametersDTO(
     val sonarRunnerExtraParameters: String,
     val skipSonarMetarunnerExecution: Boolean,
     val skipSonarReportGeneration: Boolean,
-    val sonarPluginTask: String
+    val sonarPluginTask: String,
 )

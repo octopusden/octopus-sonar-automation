@@ -1,11 +1,11 @@
 package org.octopusden.octopus.sonar.resolver
 
-import org.octopusden.octopus.sonar.dto.CommitStampDTO
-import org.octopusden.octopus.sonar.resolver.parameters.TargetBranchResolver
-import org.octopusden.octopus.sonar.test.Fixtures
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.octopusden.octopus.sonar.dto.CommitStampDTO
+import org.octopusden.octopus.sonar.resolver.parameters.TargetBranchResolver
+import org.octopusden.octopus.sonar.test.Fixtures
 import org.octopusden.octopus.vcsfacade.client.common.dto.Commit
 import org.octopusden.octopus.vcsfacade.client.common.exception.NotFoundException
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
@@ -16,7 +16,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class TargetBranchResolverTest {
-
     private lateinit var vcsFacadeClient: ClassicVcsFacadeClient
     private lateinit var resolver: TargetBranchResolver
     private val fixedNowMillis = 1_700_000_000_000L
@@ -24,40 +23,46 @@ class TargetBranchResolverTest {
     @BeforeTest
     fun setUp() {
         vcsFacadeClient = mockk()
-        resolver = TargetBranchResolver(
-            vcsFacadeClient = vcsFacadeClient,
-            initialWindowDays = 10,
-            maxWindowDays = 40,
-            windowGrowthFactor = 2,
-            nowProviderMillis = { fixedNowMillis },
-        )
+        resolver =
+            TargetBranchResolver(
+                vcsFacadeClient = vcsFacadeClient,
+                initialWindowDays = 10,
+                maxWindowDays = 40,
+                windowGrowthFactor = 2,
+                nowProviderMillis = { fixedNowMillis },
+            )
     }
 
-    private fun stamp(branch: String) =
-        CommitStampDTO(cid = "abc", branch = branch, vcsUrl = Fixtures.REPO_URL)
+    private fun stamp(branch: String) = CommitStampDTO(cid = "abc", branch = branch, vcsUrl = Fixtures.REPO_URL)
 
     private fun fromDate(days: Int): Date = Date(fixedNowMillis - days * DAY_IN_MILLIS)
 
     /** Stubs [vcsFacadeClient.getCommits] for the given [branchOrRef] to return [commits]. */
-    private fun stubCommits(branchOrRef: String, commits: List<Commit>) {
+    private fun stubCommits(
+        branchOrRef: String,
+        commits: List<Commit>,
+    ) {
         every {
             vcsFacadeClient.getCommits(
                 sshUrl = Fixtures.REPO_URL,
                 toHashOrRef = branchOrRef,
                 fromDate = any(),
-                fromHashOrRef = null
+                fromHashOrRef = null,
             )
         } returns commits
     }
 
     /** Stubs [vcsFacadeClient.getCommits] for the given [branchOrRef] to throw [exception]. */
-    private fun stubCommitsThrows(branchOrRef: String, exception: Exception) {
+    private fun stubCommitsThrows(
+        branchOrRef: String,
+        exception: Exception,
+    ) {
         every {
             vcsFacadeClient.getCommits(
                 sshUrl = Fixtures.REPO_URL,
                 toHashOrRef = branchOrRef,
                 fromDate = any(),
-                fromHashOrRef = null
+                fromHashOrRef = null,
             )
         } throws exception
     }
@@ -97,8 +102,8 @@ class TargetBranchResolverTest {
         // main:   m1 -> m2 -> shared -> m3
         // master: no overlap — resolver must check all candidates before deciding
         stubCommits("feature/abc", listOf(Fixtures.commit("f2"), Fixtures.commit("f1"), Fixtures.commit("shared")))
-        stubCommits("main",        listOf(Fixtures.commit("m3"), Fixtures.commit("shared"), Fixtures.commit("m1")))
-        stubCommits("master",      listOf(Fixtures.commit("x1"), Fixtures.commit("x2")))
+        stubCommits("main", listOf(Fixtures.commit("m3"), Fixtures.commit("shared"), Fixtures.commit("m1")))
+        stubCommits("master", listOf(Fixtures.commit("x1"), Fixtures.commit("x2")))
 
         val result = resolver.findTargetBranch(stamp("feature/abc"), listOf("main", "master"))
         assertEquals("main", result)
@@ -107,8 +112,8 @@ class TargetBranchResolverTest {
     @Test
     fun `returns master when source branch diverged from master not main`() {
         stubCommits("feature/from-master", listOf(Fixtures.commit("fm2"), Fixtures.commit("fm1"), Fixtures.commit("shared-m")))
-        stubCommits("main",                listOf(Fixtures.commit("mn1"), Fixtures.commit("mn2")))
-        stubCommits("master",              listOf(Fixtures.commit("shared-m"), Fixtures.commit("m1")))
+        stubCommits("main", listOf(Fixtures.commit("mn1"), Fixtures.commit("mn2")))
+        stubCommits("master", listOf(Fixtures.commit("shared-m"), Fixtures.commit("m1")))
 
         val result = resolver.findTargetBranch(stamp("feature/from-master"), listOf("main", "master"))
         assertEquals("master", result)
@@ -147,7 +152,7 @@ class TargetBranchResolverTest {
     @Test
     fun `falls back to first candidate when no common commit is found`() {
         stubCommits("orphan", listOf(Fixtures.commit("x1"), Fixtures.commit("x2")))
-        stubCommits("main",   listOf(Fixtures.commit("y1"), Fixtures.commit("y2")))
+        stubCommits("main", listOf(Fixtures.commit("y1"), Fixtures.commit("y2")))
         stubCommits("master", listOf(Fixtures.commit("z1"), Fixtures.commit("z2")))
 
         val result = resolver.findTargetBranch(stamp("orphan"), listOf("main", "master"))
@@ -375,7 +380,6 @@ class TargetBranchResolverTest {
         val result = resolver.findTargetBranch(stamp("feature/slow-diverge"), listOf("main", "master"))
         assertEquals("main", result)
     }
-
 
     companion object {
         private const val DAY_IN_MILLIS = 24L * 60 * 60 * 1000

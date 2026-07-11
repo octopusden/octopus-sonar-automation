@@ -7,10 +7,12 @@ import org.octopusden.octopus.sonar.client.dto.IssueDTO
 /**
  * Fetches all issues, hotspots, and quality gate status from SonarQube
  */
-class ReportDataFetcher(private val sonarClient: SonarClient) {
-
+class ReportDataFetcher(
+    private val sonarClient: SonarClient,
+) {
     companion object {
         private const val PAGE_SIZE = 500
+
         /**
          * Backstop against runaway pagination. With PAGE_SIZE=500, [SONAR_MAX_RESULTS]
          * stops the loop at page 20, so this limit can only be reached if PAGE_SIZE is
@@ -49,7 +51,10 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         val truncated: Boolean,
     )
 
-    fun fetch(projectKey: String, branch: String): FetchedData {
+    fun fetch(
+        projectKey: String,
+        branch: String,
+    ): FetchedData {
         val issuesResult = fetchAllIssues(projectKey, branch)
         val hotspotsResult = fetchAllHotspots(projectKey, branch)
         val qualityGateStatus = sonarClient.getQualityGateStatus(branch, projectKey).projectStatus.status
@@ -66,7 +71,10 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         )
     }
 
-    private fun fetchAllIssues(projectKey: String, branch: String): IssuesFetchResult {
+    private fun fetchAllIssues(
+        projectKey: String,
+        branch: String,
+    ): IssuesFetchResult {
         val allIssues = mutableListOf<IssueDTO>()
         var page = 1
         var effortTotal = 0
@@ -104,7 +112,10 @@ class ReportDataFetcher(private val sonarClient: SonarClient) {
         return IssuesFetchResult(issues = allIssues, effortTotal = effortTotal, totalIssues = totalIssues, truncated = false)
     }
 
-    private fun fetchAllHotspots(projectKey: String, branch: String): HotspotsFetchResult {
+    private fun fetchAllHotspots(
+        projectKey: String,
+        branch: String,
+    ): HotspotsFetchResult {
         val allHotspots = mutableListOf<HotspotDTO>()
         var page = 1
         var totalHotspots = 0

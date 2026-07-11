@@ -1,5 +1,9 @@
 plugins {
     kotlin("jvm")
+    // Kotlin static-analysis tools — the octopus-quality convention plugin (applied at root)
+    // reactively configures these per Kotlin subproject and wires qualityStatic.
+    id("io.gitlab.arturbosch.detekt")
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 group = "org.octopusden.octopus.sonar"

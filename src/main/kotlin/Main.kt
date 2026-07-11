@@ -17,9 +17,10 @@ import org.octopusden.octopus.sonar.command.ReportGeneratorCommand
  *
  * Run with `--help` to see available sub-commands.
  */
-class SonarAutomationCli : CliktCommand(
-    name = "sonar-automation"
-) {
+class SonarAutomationCli :
+    CliktCommand(
+        name = "sonar-automation",
+    ) {
     override fun run() = Unit
 }
 
@@ -28,6 +29,5 @@ fun main(args: Array<String>) {
         .subcommands(
             CalculateSonarParametersCommand(),
             ReportGeneratorCommand(),
-        )
-        .main(args)
+        ).main(args)
 }

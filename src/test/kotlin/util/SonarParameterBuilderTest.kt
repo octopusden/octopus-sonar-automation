@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SonarParameterBuilderTest {
-
     // ── forPullRequest ────────────────────────────────────────────────────────
 
     @Test
@@ -31,17 +30,18 @@ class SonarParameterBuilderTest {
         val result = SonarParameterBuilder.forPullRequest("99", "src", "tgt")
         assertEquals(
             "-Dsonar.pullrequest.key=99 -Dsonar.pullrequest.branch=src -Dsonar.pullrequest.base=tgt",
-            result
+            result,
         )
     }
 
     @Test
     fun `forPullRequest works with TeamCity parameter references`() {
-        val result = SonarParameterBuilder.forPullRequest(
-            "%teamcity.pullRequest.number%",
-            "%teamcity.pullRequest.source.branch%",
-            "%teamcity.pullRequest.target.branch%"
-        )
+        val result =
+            SonarParameterBuilder.forPullRequest(
+                "%teamcity.pullRequest.number%",
+                "%teamcity.pullRequest.source.branch%",
+                "%teamcity.pullRequest.target.branch%",
+            )
         assertTrue(result.contains("-Dsonar.pullrequest.key=%teamcity.pullRequest.number%"))
         assertTrue(result.contains("-Dsonar.pullrequest.branch=%teamcity.pullRequest.source.branch%"))
         assertTrue(result.contains("-Dsonar.pullrequest.base=%teamcity.pullRequest.target.branch%"))
