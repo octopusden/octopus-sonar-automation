@@ -2,6 +2,10 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ClassOrdering:BitbucketSshUrlParser.kt$BitbucketSshUrlParser$/** Matches: ssh://user@host/PROJECT/repo.git */ private val SSH_URL_PATTERN = Pattern.compile("ssh://[^@]+@[^/]+/([^/]+)/([^/]+)")</ID>
+    <ID>ClassOrdering:QualityGateChecker.kt$QualityGateChecker$Companion</ID>
+    <ID>ClassOrdering:ReportDataFetcher.kt$ReportDataFetcher$Companion</ID>
+    <ID>ClassOrdering:ReportHtmlRenderer.kt$ReportHtmlRenderer$Companion</ID>
     <ID>CyclomaticComplexMethod:TargetBranchResolver.kt$TargetBranchResolver$fun findTargetBranch( commit: CommitStampDTO, candidates: List&lt;String>, ): String</ID>
     <ID>ForbiddenComment:TeamcityClient.kt$TeamcityRestClient$* Lightweight HTTP client for the TeamCity REST API. * TODO: To be replaced with octopus-external-system-clients</ID>
     <ID>InvalidPackageDeclaration:BitbucketSshUrlParser.kt$package org.octopusden.octopus.sonar.util</ID>
@@ -43,51 +47,10 @@
     <ID>InvalidPackageDeclaration:TeamCityNotifier.kt$package org.octopusden.octopus.sonar.resolver.report</ID>
     <ID>InvalidPackageDeclaration:TeamCityNotifierTest.kt$package org.octopusden.octopus.sonar.resolver.report</ID>
     <ID>InvalidPackageDeclaration:TeamcityClient.kt$package org.octopusden.octopus.sonar.client</ID>
-    <ID>LongMethod:TargetBranchResolver.kt$TargetBranchResolver$fun findTargetBranch( commit: CommitStampDTO, candidates: List&lt;String>, ): String</ID>
-    <ID>LongParameterList:ReportDataMapper.kt$ReportDataMapper$( fetchedData: ReportDataFetcher.FetchedData, componentName: String, componentVersion: String, sonarProjectName: String, sonarServerUrl: String, sonarProjectKey: String, sourceBranch: String, )</ID>
-    <ID>LongParameterList:ReportGenerator.kt$ReportGenerator$( projectKey: String, branch: String, componentName: String, componentVersion: String, sonarProjectName: String, sonarServerUrl: String, outputDir: File = File(DEFAULT_OUTPUT_DIR), )</ID>
-    <ID>LongParameterList:ReportGeneratorTest.kt$ReportGeneratorTest$( key: String = "AX1", severity: String = "MAJOR", message: String = "Fix this", rule: String = "java:S1234", type: String = "BUG", component: String = "proj:src/main/java/com/example/Foo.java", line: Int = 42, effort: String = "15min", )</ID>
-    <ID>LongParameterList:SonarParametersCalculator.kt$SonarParametersCalculator$( private val teamcityClient: TeamcityRestClient, private val crsClient: ClassicComponentsRegistryServiceClient, private val vcsFacadeClient: ClassicVcsFacadeClient, private val componentName: String, private val componentVersion: String, private val teamcityBuildId: Int, private val sonarConfigDir: Path, private val commitStampResolver: CommitStampResolver = CommitStampResolver(teamcityClient, crsClient), private val targetBranchResolver: TargetBranchResolver = TargetBranchResolver(vcsFacadeClient), private val sonarServerResolver: SonarServerResolver = SonarServerResolver(crsClient), private val sonarExecutionResolver: SonarExecutionResolver = SonarExecutionResolver(crsClient, sonarConfigDir), )</ID>
     <ID>LoopWithTooManyJumpStatements:TargetBranchResolver.kt$TargetBranchResolver$for</ID>
-    <ID>MagicNumber:QualityGateChecker.kt$QualityGateChecker$1_000L</ID>
-    <ID>MagicNumber:ReportDataMapper.kt$ReportDataMapper.Companion$60</ID>
-    <ID>MagicNumber:ReportGeneratorCommand.kt$ReportGeneratorCommand$20</ID>
-    <ID>MagicNumber:ReportGeneratorCommand.kt$ReportGeneratorCommand$5</ID>
-    <ID>MagicNumber:TeamcityClient.kt$TeamcityRestClient$200</ID>
-    <ID>MagicNumber:TeamcityClient.kt$TeamcityRestClient$30</ID>
-    <ID>MagicNumber:TeamcityClient.kt$TeamcityRestClient$60</ID>
     <ID>MatchingDeclarationName:Main.kt$SonarAutomationCli : CliktCommand</ID>
     <ID>MatchingDeclarationName:SonarServerDTO.kt$SonarServerParametersDTO</ID>
-    <ID>MaxLineLength:CalculateSonarParametersCommand.kt$CalculateSonarParametersCommand$private</ID>
-    <ID>MaxLineLength:CommitStampResolver.kt$CommitStampResolver$"externalRegistry is $NOT_AVAILABLE_EXTERNAL_REGISTRY but ${commitStamps.size} commit stamps found — using the first one."</ID>
-    <ID>MaxLineLength:CommitStampResolver.kt$CommitStampResolver$return</ID>
-    <ID>MaxLineLength:CommitStampResolverTest.kt$CommitStampResolverTest$every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.vcsSettings(branch = "main | release/1.0 | release/2.0")</ID>
-    <ID>MaxLineLength:CommitStampResolverTest.kt$CommitStampResolverTest$every { teamcityClient.getBuildById(1) } returns Fixtures.tcBuildResponse(listOf(Fixtures.tcRevision(vcsRootInstanceId = 1)))</ID>
-    <ID>MaxLineLength:ReportDataFetcher.kt$ReportDataFetcher$return IssuesFetchResult(issues = allIssues, effortTotal = effortTotal, totalIssues = totalIssues, truncated = false)</ID>
-    <ID>MaxLineLength:ReportDataFetcher.kt$ReportDataFetcher$val response = sonarClient.searchHotspots(projectKey, branch, status = "TO_REVIEW", ps = PAGE_SIZE, p = page)</ID>
-    <ID>MaxLineLength:ReportGeneratorCommand.kt$ReportGeneratorCommand$private</ID>
-    <ID>MaxLineLength:ReportGeneratorCommand.kt$ReportGeneratorCommand.&lt;no name provided>$?:</ID>
-    <ID>MaxLineLength:ReportGeneratorTest.kt$ReportGeneratorTest$assertFalse(file.readText().contains("id=\"truncation-notice\""), "Should not show truncation notice for 600 issues")</ID>
-    <ID>MaxLineLength:ReportGeneratorTest.kt$ReportGeneratorTest$every { sonarClient.searchHotspots(any(), any(), any(), any(), any()) } returns hotspotResponse(listOf(sampleHotspot()))</ID>
-    <ID>MaxLineLength:ReportHtmlRenderer.kt$ReportHtmlRenderer$setProperty("resource.loader.classpath.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader")</ID>
-    <ID>MaxLineLength:SonarExecutionResolver.kt$SonarExecutionResolver$logger.info("$componentName uses java/kotlin with ${component.buildSystem} - skipping (handled by Gradle/Maven plugins)")</ID>
-    <ID>MaxLineLength:SonarExecutionResolverTest.kt$SonarExecutionResolverTest$every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("java"))</ID>
-    <ID>MaxLineLength:SonarExecutionResolverTest.kt$SonarExecutionResolverTest$every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("test-component"))</ID>
-    <ID>MaxLineLength:SonarParametersCalculator.kt$SonarParametersCalculator$else -> error("Unexpected sonarServer value '$serverOverride' — validation should have caught this at load time")</ID>
-    <ID>MaxLineLength:SonarParametersCalculator.kt$SonarParametersCalculator$val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)</ID>
-    <ID>MaxLineLength:SonarParametersCalculatorTest.kt$SonarParametersCalculatorTest$every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns BuildSystem.GRADLE</ID>
-    <ID>MaxLineLength:SonarParametersCalculatorTest.kt$SonarParametersCalculatorTest$every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0") } returns BuildSystem.MAVEN</ID>
     <ID>MaxLineLength:SonarParametersDTO.kt$SonarParametersDTO$*</ID>
-    <ID>MaxLineLength:TargetBranchResolverTest.kt$TargetBranchResolverTest$stubCommits("feature/from-master", listOf(Fixtures.commit("fm2"), Fixtures.commit("fm1"), Fixtures.commit("shared-m")))</ID>
-    <ID>MaxLineLength:TeamCityEscaper.kt$TeamCityEscaper$*</ID>
-    <ID>MaxLineLength:TeamCityNotifier.kt$TeamCityNotifier.Companion$"pullRequest=${URLEncoder.encode(branch.removePrefix(PULL_REQUEST_BRANCH_MARKER), StandardCharsets.UTF_8)}"</ID>
-    <ID>MaxLineLength:TeamCityNotifierTest.kt$TeamCityNotifierTest$val result = QualityGateCheckResult("OK", newIssueCount = 0, failedMetrics = listOf("reliability", "security", "maintainability"))</ID>
-    <ID>ReturnCount:CommitStampResolver.kt$CommitStampResolver$private fun parseRevision( entry: Map&lt;String, Any>, getVcsRoot: (Int) -> Map&lt;String, Any>, ): CommitStampDTO?</ID>
-    <ID>ReturnCount:SonarExecutionResolver.kt$SonarExecutionResolver$fun resolveSonarPluginBuildSystem( componentName: String, componentVersion: String, ): BuildSystem?</ID>
-    <ID>ReturnCount:SonarExecutionResolver.kt$SonarExecutionResolver$fun skipSonarMetarunnerExecution( componentName: String, componentVersion: String, ): Boolean</ID>
-    <ID>ReturnCount:SonarExecutionResolver.kt$SonarExecutionResolver$fun skipSonarReportGeneration(componentName: String): Boolean</ID>
-    <ID>ReturnCount:SonarExecutionResolver.kt$SonarExecutionResolver$private fun skipIfArchivedOrTest( componentName: String, archived: Boolean, labels: Set&lt;String>, ): Boolean?</ID>
-    <ID>ReturnCount:TargetBranchResolver.kt$TargetBranchResolver$fun findTargetBranch( commit: CommitStampDTO, candidates: List&lt;String>, ): String</ID>
     <ID>TooGenericExceptionCaught:TargetBranchResolver.kt$TargetBranchResolver$e: Exception</ID>
     <ID>UnusedPrivateMember:ReportGeneratorTest.kt$ReportGeneratorTest$private fun emptyPaging()</ID>
     <ID>UseCheckOrError:ReportGenerator.kt$ReportGenerator$throw IllegalStateException("Failed to create output directory: ${outputDir.absolutePath}")</ID>

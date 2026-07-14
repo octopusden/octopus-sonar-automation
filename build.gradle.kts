@@ -29,25 +29,13 @@ octopusQuality {
     }
 }
 
-// The octopus-quality convention plugin reactively configures and wires ONLY the
-// subprojects (sonar-client) into qualityStatic. This root project ALSO carries Kotlin
-// source (src/main + src/test), so configure its detekt/ktlint explicitly against the
-// committed baselines, enforce failures, and fold both tasks into the qualityStatic gate
-// so no Kotlin escapes static analysis.
-detekt {
-    buildUponDefaultConfig = true
-    baseline = file("detekt-baseline.xml")
-    ignoreFailures = false
-}
-
-ktlint {
-    ignoreFailures.set(false)
-    baseline.set(file("ktlint-baseline.xml"))
-}
-
-tasks.matching { it.name == "qualityStatic" }.configureEach {
-    dependsOn("detekt", "ktlintCheck")
-}
+// NOTE: octopus-quality 2.4.0 gates the ROOT module automatically when it carries its own
+// Kotlin sources (src/main + src/test), configuring detekt/ktlint (shared detekt.yml +
+// .editorconfig, committed baselines, failure enforcement) and folding both tasks into
+// qualityStatic. The previously-required manual detekt/ktlint config + qualityStatic wiring
+// (a 2.3.5 gap workaround) is therefore redundant and has been removed. The detekt/ktlint
+// plugins must still be applied here (see plugins {}) so the plugin can configure them and
+// the hollow-gate guard is satisfied.
 
 repositories {
     mavenCentral()
