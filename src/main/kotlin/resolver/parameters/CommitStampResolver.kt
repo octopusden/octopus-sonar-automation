@@ -1,13 +1,13 @@
 package org.octopusden.octopus.sonar.resolver.parameters
 
+import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
+import org.octopusden.octopus.components.registry.core.dto.VersionControlSystemRootDTO
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.CommitStampDTO
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
 import org.octopusden.octopus.sonar.util.BitbucketSshUrlParser
 import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
 import org.octopusden.octopus.sonar.util.normalizedBranch
-import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
-import org.octopusden.octopus.components.registry.core.dto.VersionControlSystemRootDTO
 import org.slf4j.LoggerFactory
 
 /**
@@ -29,7 +29,7 @@ class CommitStampResolver(
     fun resolve(
         componentName: String,
         componentVersion: String,
-        teamcityBuildId: Int
+        teamcityBuildId: Int,
     ): ResolvedVCSDTO {
         val commitStamps = extractCommitStamps(teamcityBuildId)
         require(commitStamps.isNotEmpty()) { "commitStamps must not be empty" }
@@ -54,8 +54,8 @@ class CommitStampResolver(
         return (revisions["revision"] as? List<Map<String, Any>> ?: emptyList())
             .mapNotNull { entry ->
                 parseRevision(entry) { id ->
-                        vcsRootCache.getOrPut(id) { teamcityClient.getVcsRootInstance(id) }
-                    }
+                    vcsRootCache.getOrPut(id) { teamcityClient.getVcsRootInstance(id) }
+                }
             }
     }
 
@@ -64,28 +64,37 @@ class CommitStampResolver(
      */
     private fun parseRevision(
         entry: Map<String, Any>,
-        getVcsRoot: (Int) -> Map<String, Any>
+        getVcsRoot: (Int) -> Map<String, Any>,
     ): CommitStampDTO? {
-        val cid    = entry["version"]      as? String ?: return null
+        val cid = entry["version"] as? String ?: return null
         val branch = entry["vcsBranchName"] as? String ?: return null
 
-        val vcsRootInstanceId = (entry["vcs-root-instance"] as? Map<*, *>)
-            ?.get("id")?.toString()?.toIntOrNull()
-            ?: return null
+        val vcsRootInstanceId =
+            (entry["vcs-root-instance"] as? Map<*, *>)
+                ?.get("id")
+                ?.toString()
+                ?.toIntOrNull()
+                ?: return null
 
         val vcsRoot = getVcsRoot(vcsRootInstanceId)
 
         if (vcsRoot["vcsName"] == VCS_NAME_CVS) return null
 
-        val propertyList = ((vcsRoot["properties"] as? Map<*, *>)
-            ?.get("property") as? List<Map<String, String>>)
-            ?: emptyList()
+        val propertyList =
+            (
+                (vcsRoot["properties"] as? Map<*, *>)
+                    ?.get("property") as? List<Map<String, String>>
+            )
+                ?: emptyList()
 
-        val vcsUrl = propertyList
-            .firstOrNull { it["name"] in VCS_URL_PROPERTY_NAMES }
-            ?.get("value")
-            ?: error("No VCS URL property found in vcs-root-instance $vcsRootInstanceId. " +
-                    "Looked for: $VCS_URL_PROPERTY_NAMES")
+        val vcsUrl =
+            propertyList
+                .firstOrNull { it["name"] in VCS_URL_PROPERTY_NAMES }
+                ?.get("value")
+                ?: error(
+                    "No VCS URL property found in vcs-root-instance $vcsRootInstanceId. " +
+                        "Looked for: $VCS_URL_PROPERTY_NAMES",
+                )
 
         return CommitStampDTO(cid, branch.normalizedBranch(), vcsUrl)
     }
@@ -97,7 +106,7 @@ class CommitStampResolver(
     private fun resolveWithoutVcsSettings(commitStamps: List<CommitStampDTO>): ResolvedVCSDTO {
         if (commitStamps.size > 1) {
             logger.warn(
-                "externalRegistry is $NOT_AVAILABLE_EXTERNAL_REGISTRY but ${commitStamps.size} commit stamps found — using the first one."
+                "externalRegistry is $NOT_AVAILABLE_EXTERNAL_REGISTRY but ${commitStamps.size} commit stamps found — using the first one.",
             )
         }
         val commit = commitStamps.first()
@@ -106,7 +115,7 @@ class CommitStampResolver(
             commit = commit,
             defaultBranches = DEFAULT_BRANCH_CANDIDATES,
             bbProjectKey = projectKey,
-            bbRepositoryKey = repoKey
+            bbRepositoryKey = repoKey,
         )
     }
 
@@ -117,29 +126,31 @@ class CommitStampResolver(
      */
     private fun resolveWithVcsSettings(
         commitStamps: List<CommitStampDTO>,
-        roots: List<VersionControlSystemRootDTO>
+        roots: List<VersionControlSystemRootDTO>,
     ): ResolvedVCSDTO {
         val rootsByPath = roots.associateBy { it.vcsPath }
-        val (matchedCommit, matchedRoot) = commitStamps.firstNotNullOfOrNull { stamp ->
-            rootsByPath[stamp.vcsUrl]?.let { root -> stamp to root }
-        } ?: error(
-            "None of the commit stamps matched VCS roots ${rootsByPath.keys}. " +
-            "Commit stamp URLs: ${commitStamps.map { it.vcsUrl }}"
-        )
+        val (matchedCommit, matchedRoot) =
+            commitStamps.firstNotNullOfOrNull { stamp ->
+                rootsByPath[stamp.vcsUrl]?.let { root -> stamp to root }
+            } ?: error(
+                "None of the commit stamps matched VCS roots ${rootsByPath.keys}. " +
+                    "Commit stamp URLs: ${commitStamps.map { it.vcsUrl }}",
+            )
 
-        val branches = matchedRoot.branch
-            .split("|")
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .ifEmpty { null }
-            ?: DEFAULT_BRANCH_CANDIDATES
+        val branches =
+            matchedRoot.branch
+                .split("|")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .ifEmpty { null }
+                ?: DEFAULT_BRANCH_CANDIDATES
 
         val (projectKey, repoKey) = BitbucketSshUrlParser.parseRepository(matchedCommit.vcsUrl)
         return ResolvedVCSDTO(
             commit = matchedCommit,
             defaultBranches = branches,
             bbProjectKey = projectKey,
-            bbRepositoryKey = repoKey
+            bbRepositoryKey = repoKey,
         )
     }
 

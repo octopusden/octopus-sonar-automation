@@ -9,13 +9,12 @@ package org.octopusden.octopus.sonar.util
  * @see <a href="https://www.jetbrains.com/help/teamcity/service-messages.html#Escaped+Values">TeamCity Escaped Values</a>
  */
 object TeamCityEscaper {
-
-    fun escape(value: String): String = value
-        .replace("|", "||")
-        .replace("'", "|'")
-        .replace("\n", "|n")
-        .replace("\r", "|r")
-        .replace("[", "|[")
-        .replace("]", "|]")
+    fun escape(value: String): String =
+        value
+            .replace("|", "||")
+            .replace("'", "|'")
+            .replace("\n", "|n")
+            .replace("\r", "|r")
+            .replace("[", "|[")
+            .replace("]", "|]")
 }
-

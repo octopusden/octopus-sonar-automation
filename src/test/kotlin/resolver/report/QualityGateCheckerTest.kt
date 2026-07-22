@@ -1,8 +1,9 @@
 package org.octopusden.octopus.sonar.resolver.report
 
-import org.octopusden.octopus.sonar.client.SonarClient
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
+import org.octopusden.octopus.sonar.client.SonarClient
 import org.octopusden.octopus.sonar.client.dto.ComponentMeasuresDTO
 import org.octopusden.octopus.sonar.client.dto.IssuesResponseDTO
 import org.octopusden.octopus.sonar.client.dto.MeasureDTO
@@ -10,46 +11,49 @@ import org.octopusden.octopus.sonar.client.dto.MeasuresResponseDTO
 import org.octopusden.octopus.sonar.client.dto.PagingDTO
 import org.octopusden.octopus.sonar.client.dto.QualityGateProjectStatusDTO
 import org.octopusden.octopus.sonar.client.dto.QualityGateResponseDTO
-import io.mockk.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class QualityGateCheckerTest {
-
     private val sonarClient = mockk<SonarClient>()
     private val checker = QualityGateChecker(sonarClient)
 
-    private fun qualityGateResponse(status: String) = QualityGateResponseDTO(
-        projectStatus = QualityGateProjectStatusDTO(status = status)
-    )
-
-    private fun newIssuesResponse(total: Int) = IssuesResponseDTO(
-        paging = PagingDTO(pageIndex = 1, pageSize = 1, total = total),
-        effortTotal = 0,
-        issues = emptyList(),
-    )
-
-    private fun measuresResponse(vararg measures: MeasureDTO) = MeasuresResponseDTO(
-        component = ComponentMeasuresDTO(
-            key = "proj",
-            name = "proj",
-            measures = measures.toList(),
+    private fun qualityGateResponse(status: String) =
+        QualityGateResponseDTO(
+            projectStatus = QualityGateProjectStatusDTO(status = status),
         )
-    )
+
+    private fun newIssuesResponse(total: Int) =
+        IssuesResponseDTO(
+            paging = PagingDTO(pageIndex = 1, pageSize = 1, total = total),
+            effortTotal = 0,
+            issues = emptyList(),
+        )
+
+    private fun measuresResponse(vararg measures: MeasureDTO) =
+        MeasuresResponseDTO(
+            component =
+                ComponentMeasuresDTO(
+                    key = "proj",
+                    name = "proj",
+                    measures = measures.toList(),
+                ),
+        )
 
     @Test
     fun `quality gate passed with no issues and all ratings at best`() {
         every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("OK")
         every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
-        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse(
-            MeasureDTO("software_quality_reliability_rating", "1.0", true),
-            MeasureDTO("software_quality_security_rating", "1.0", true),
-            MeasureDTO("software_quality_maintainability_rating", "1.0", true),
-            MeasureDTO("security_review_rating", "1.0", true),
-        )
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns
+            measuresResponse(
+                MeasureDTO("software_quality_reliability_rating", "1.0", true),
+                MeasureDTO("software_quality_security_rating", "1.0", true),
+                MeasureDTO("software_quality_maintainability_rating", "1.0", true),
+                MeasureDTO("security_review_rating", "1.0", true),
+            )
 
         val result = checker.check("proj", "master")
 
@@ -88,12 +92,13 @@ class QualityGateCheckerTest {
     fun `detects failed metrics`() {
         every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("OK")
         every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
-        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse(
-            MeasureDTO("software_quality_reliability_rating", "1.0", true),
-            MeasureDTO("software_quality_security_rating", "3.0", false),
-            MeasureDTO("software_quality_maintainability_rating", "1.0", true),
-            MeasureDTO("security_review_rating", "2.0", false),
-        )
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns
+            measuresResponse(
+                MeasureDTO("software_quality_reliability_rating", "1.0", true),
+                MeasureDTO("software_quality_security_rating", "3.0", false),
+                MeasureDTO("software_quality_maintainability_rating", "1.0", true),
+                MeasureDTO("security_review_rating", "2.0", false),
+            )
 
         val result = checker.check("proj", "master")
 
@@ -105,12 +110,13 @@ class QualityGateCheckerTest {
     fun `all metrics at best value returns empty failed metrics`() {
         every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("OK")
         every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
-        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse(
-            MeasureDTO("software_quality_reliability_rating", "1.0", true),
-            MeasureDTO("software_quality_security_rating", "1.0", true),
-            MeasureDTO("software_quality_maintainability_rating", "1.0", true),
-            MeasureDTO("security_review_rating", "1.0", true),
-        )
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns
+            measuresResponse(
+                MeasureDTO("software_quality_reliability_rating", "1.0", true),
+                MeasureDTO("software_quality_security_rating", "1.0", true),
+                MeasureDTO("software_quality_maintainability_rating", "1.0", true),
+                MeasureDTO("security_review_rating", "1.0", true),
+            )
 
         val result = checker.check("proj", "master")
 
@@ -132,9 +138,10 @@ class QualityGateCheckerTest {
     fun `combined failed gate with new issues and failed metrics`() {
         every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("ERROR")
         every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(10)
-        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse(
-            MeasureDTO("software_quality_reliability_rating", "3.0", false),
-        )
+        every { sonarClient.getMeasures("master", "proj", any<String>()) } returns
+            measuresResponse(
+                MeasureDTO("software_quality_reliability_rating", "3.0", false),
+            )
 
         val result = checker.check("proj", "master")
 
@@ -161,11 +168,12 @@ class QualityGateCheckerTest {
     @Test
     fun `NONE status retries until OK and returns OK`() {
         val fastChecker = QualityGateChecker(sonarClient, maxRetries = 3, retryDelaySeconds = 0)
-        every { sonarClient.getQualityGateStatus("master", "proj") } returnsMany listOf(
-            qualityGateResponse("NONE"),
-            qualityGateResponse("NONE"),
-            qualityGateResponse("OK"),
-        )
+        every { sonarClient.getQualityGateStatus("master", "proj") } returnsMany
+            listOf(
+                qualityGateResponse("NONE"),
+                qualityGateResponse("NONE"),
+                qualityGateResponse("OK"),
+            )
         every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(0)
         every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse()
 
@@ -179,10 +187,11 @@ class QualityGateCheckerTest {
     @Test
     fun `NONE status retries until ERROR and returns ERROR`() {
         val fastChecker = QualityGateChecker(sonarClient, maxRetries = 3, retryDelaySeconds = 0)
-        every { sonarClient.getQualityGateStatus("master", "proj") } returnsMany listOf(
-            qualityGateResponse("NONE"),
-            qualityGateResponse("ERROR"),
-        )
+        every { sonarClient.getQualityGateStatus("master", "proj") } returnsMany
+            listOf(
+                qualityGateResponse("NONE"),
+                qualityGateResponse("ERROR"),
+            )
         every { sonarClient.searchIssues("proj", "master", false, 1, 1, true) } returns newIssuesResponse(5)
         every { sonarClient.getMeasures("master", "proj", any<String>()) } returns measuresResponse()
 
@@ -198,9 +207,10 @@ class QualityGateCheckerTest {
         val fastChecker = QualityGateChecker(sonarClient, maxRetries = 2, retryDelaySeconds = 0)
         every { sonarClient.getQualityGateStatus("master", "proj") } returns qualityGateResponse("NONE")
 
-        val ex = assertFailsWith<IllegalStateException> {
-            fastChecker.check("proj", "master")
-        }
+        val ex =
+            assertFailsWith<IllegalStateException> {
+                fastChecker.check("proj", "master")
+            }
 
         assertTrue(ex.message!!.contains("NONE"))
         // Called maxRetries+1 times total (initial attempt + 2 retries)

@@ -7,22 +7,23 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TeamCityNotifierTest {
-
     // sourceBranch == targetBranch → production branch
-    private val productionNotifier = TeamCityNotifier(
-        sonarServerUrl = "https://sonar.example.com",
-        projectKey = "proj",
-        sourceBranch = "master",
-        targetBranch = "master",
-    )
+    private val productionNotifier =
+        TeamCityNotifier(
+            sonarServerUrl = "https://sonar.example.com",
+            projectKey = "proj",
+            sourceBranch = "master",
+            targetBranch = "master",
+        )
 
     // sourceBranch != targetBranch → feature branch
-    private val featureNotifier = TeamCityNotifier(
-        sonarServerUrl = "https://sonar.example.com",
-        projectKey = "proj",
-        sourceBranch = "feature/abc",
-        targetBranch = "master",
-    )
+    private val featureNotifier =
+        TeamCityNotifier(
+            sonarServerUrl = "https://sonar.example.com",
+            projectKey = "proj",
+            sourceBranch = "feature/abc",
+            targetBranch = "master",
+        )
 
     // ── Quality gate failed ──────────────────────────────────────────────────
 

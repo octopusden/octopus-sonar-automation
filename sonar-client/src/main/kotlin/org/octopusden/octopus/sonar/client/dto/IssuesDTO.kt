@@ -4,7 +4,7 @@ import java.util.Date
 
 data class IssueImpactDTO(
     val softwareQuality: String,
-    val severity: String
+    val severity: String,
 )
 
 data class IssueDTO(
@@ -21,12 +21,11 @@ data class IssueDTO(
     val updateDate: Date,
     val type: String,
     val scope: String,
-    val impacts: List<IssueImpactDTO>
+    val impacts: List<IssueImpactDTO>,
 )
 
 data class IssuesResponseDTO(
     val paging: PagingDTO,
     val effortTotal: Int?,
-    val issues: List<IssueDTO>
+    val issues: List<IssueDTO>,
 )
-

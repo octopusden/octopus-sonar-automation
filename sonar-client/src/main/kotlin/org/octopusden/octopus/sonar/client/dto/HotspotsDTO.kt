@@ -12,11 +12,10 @@ data class HotspotDTO(
     val author: String?,
     val creationDate: String?,
     val updateDate: String?,
-    val ruleKey: String?
+    val ruleKey: String?,
 )
 
 data class HotspotsResponseDTO(
     val paging: PagingDTO,
-    val hotspots: List<HotspotDTO>
+    val hotspots: List<HotspotDTO>,
 )
-

@@ -1,18 +1,17 @@
 package org.octopusden.octopus.sonar.resolver
 
-import org.octopusden.octopus.sonar.client.TeamcityRestClient
-import org.octopusden.octopus.sonar.resolver.parameters.CommitStampResolver
-import org.octopusden.octopus.sonar.test.Fixtures
 import io.mockk.every
 import io.mockk.mockk
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
+import org.octopusden.octopus.sonar.client.TeamcityRestClient
+import org.octopusden.octopus.sonar.resolver.parameters.CommitStampResolver
+import org.octopusden.octopus.sonar.test.Fixtures
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class CommitStampResolverTest {
-
     private lateinit var teamcityClient: TeamcityRestClient
     private lateinit var crsClient: ComponentsRegistryServiceClient
     private lateinit var resolver: CommitStampResolver
@@ -42,7 +41,8 @@ class CommitStampResolverTest {
 
     @Test
     fun `normalises refs-heads prefix from branch name`() {
-        every { teamcityClient.getBuildById(1) } returns Fixtures.tcBuildResponse(listOf(Fixtures.tcRevision(branch = "refs/heads/feature/abc")))
+        every { teamcityClient.getBuildById(1) } returns
+            Fixtures.tcBuildResponse(listOf(Fixtures.tcRevision(branch = "refs/heads/feature/abc")))
         every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.noVcsSettings()
 

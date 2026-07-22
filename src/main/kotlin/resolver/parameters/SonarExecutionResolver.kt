@@ -30,7 +30,6 @@ class SonarExecutionResolver(
     private val crsClient: ComponentsRegistryServiceClient,
     configDir: Path,
 ) {
-
     private val appliedSastComponents: Map<String, SonarProjectOverride> = loadAppliedSast(configDir)
     private val otherDocComponents: Set<String> = loadList(configDir, OTHER_DOC_FILE)
     private val mismatchJavaVersionComponents: Set<String> = loadList(configDir, MISMATCH_JAVA_VERSION_FILE)
@@ -52,7 +51,10 @@ class SonarExecutionResolver(
      *   its `javaVersion` build parameter is `17` or newer, or it is listed in
      *   `mismatch-java-version.txt` - those components are handled by the Gradle/Maven Sonar plugins
      */
-    fun skipSonarMetarunnerExecution(componentName: String, componentVersion: String): Boolean {
+    fun skipSonarMetarunnerExecution(
+        componentName: String,
+        componentVersion: String,
+    ): Boolean {
         skipIfAppliedSast(componentName)?.let { return it }
         skipIfDoc(componentName)?.let { return it }
 
@@ -105,7 +107,10 @@ class SonarExecutionResolver(
      * - Component is labelled `java` or `kotlin`
      * - Component uses Java 17 or newer, or is listed in `mismatch-java-version.txt`
      */
-    fun resolveSonarPluginBuildSystem(componentName: String, componentVersion: String): BuildSystem? {
+    fun resolveSonarPluginBuildSystem(
+        componentName: String,
+        componentVersion: String,
+    ): BuildSystem? {
         skipIfAppliedSast(componentName)?.let { return null }
         skipIfDoc(componentName)?.let { return null }
 
@@ -147,7 +152,11 @@ class SonarExecutionResolver(
         return null
     }
 
-    private fun skipIfArchivedOrTest(componentName: String, archived: Boolean, labels: Set<String>): Boolean? {
+    private fun skipIfArchivedOrTest(
+        componentName: String,
+        archived: Boolean,
+        labels: Set<String>,
+    ): Boolean? {
         if (archived) {
             logger.info("$componentName is archived - skipping")
             return true
@@ -159,8 +168,7 @@ class SonarExecutionResolver(
         return null
     }
 
-    private fun DetailedComponent.isJavaOrKotlin(): Boolean =
-        labels.contains("java") || labels.contains("kotlin")
+    private fun DetailedComponent.isJavaOrKotlin(): Boolean = labels.contains("java") || labels.contains("kotlin")
 
     private fun DetailedComponent.isModernJava(): Boolean {
         val version = buildParameters?.javaVersion?.trim()?.toIntOrNull() ?: return false
@@ -192,21 +200,25 @@ class SonarExecutionResolver(
                 if (server != null && server.lowercase() !in setOf("community", "developer")) {
                     error(
                         "Invalid sonarServer value '$server' for component '$component' in $APPLIED_SAST_FILE. " +
-                        "Allowed values: 'community', 'developer'"
+                            "Allowed values: 'community', 'developer'",
                     )
                 }
             }
             return result
         }
 
-        private fun loadList(configDir: Path, fileName: String): Set<String> {
+        private fun loadList(
+            configDir: Path,
+            fileName: String,
+        ): Set<String> {
             val externalFile = configDir.resolve(fileName)
             if (!Files.exists(externalFile)) {
                 error("Could not load Sonar skip list: $externalFile")
             }
 
             logger.info("Loading Sonar skip list from external config: $externalFile")
-            return Files.readAllLines(externalFile)
+            return Files
+                .readAllLines(externalFile)
                 .asSequence()
                 .map { it.trim() }
                 .filter { it.isNotBlank() }
@@ -214,10 +226,10 @@ class SonarExecutionResolver(
                 .toSet()
         }
     }
-
 }
 
 private fun String.isDocPrefix(): Boolean =
-    startsWith("doc-", ignoreCase = true) || startsWith("doc_", ignoreCase = true)
-            || endsWith("-doc", ignoreCase = true) || endsWith("_doc", ignoreCase = true)
-
+    startsWith("doc-", ignoreCase = true) ||
+        startsWith("doc_", ignoreCase = true) ||
+        endsWith("-doc", ignoreCase = true) ||
+        endsWith("_doc", ignoreCase = true)

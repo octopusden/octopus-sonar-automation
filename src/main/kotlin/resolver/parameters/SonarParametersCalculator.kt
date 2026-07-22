@@ -1,5 +1,7 @@
 package org.octopusden.octopus.sonar.resolver.parameters
 
+import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
+import org.octopusden.octopus.components.registry.core.dto.BuildSystem
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
 import org.octopusden.octopus.sonar.dto.SonarParametersDTO
@@ -7,8 +9,6 @@ import org.octopusden.octopus.sonar.dto.SonarServerParametersDTO
 import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
 import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
 import org.octopusden.octopus.sonar.util.SonarParameterBuilder
-import org.octopusden.octopus.components.registry.core.dto.BuildSystem
-import org.octopusden.octopus.components.registry.client.impl.ClassicComponentsRegistryServiceClient
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
 import java.nio.file.Path
 
@@ -20,18 +20,15 @@ class SonarParametersCalculator(
     private val teamcityClient: TeamcityRestClient,
     private val crsClient: ClassicComponentsRegistryServiceClient,
     private val vcsFacadeClient: ClassicVcsFacadeClient,
-
     private val componentName: String,
     private val componentVersion: String,
     private val teamcityBuildId: Int,
     private val sonarConfigDir: Path,
-
     private val commitStampResolver: CommitStampResolver = CommitStampResolver(teamcityClient, crsClient),
     private val targetBranchResolver: TargetBranchResolver = TargetBranchResolver(vcsFacadeClient),
     private val sonarServerResolver: SonarServerResolver = SonarServerResolver(crsClient),
     private val sonarExecutionResolver: SonarExecutionResolver = SonarExecutionResolver(crsClient, sonarConfigDir),
 ) {
-
     /**
      * Computes all Sonar parameters for the current build.
      *
@@ -52,17 +49,20 @@ class SonarParametersCalculator(
         val projectContext = resolveProjectContext(resolvedVcs, sastOverride)
         val branchContext = resolveBranchContext(resolvedVcs, buildMode)
 
-        val sonarServer = sastOverride?.sonarServer
-            ?.let { resolveServerFromOverride(it) }
-            ?: sonarServerResolver.resolveSonarServer(componentName)
+        val sonarServer =
+            sastOverride
+                ?.sonarServer
+                ?.let { resolveServerFromOverride(it) }
+                ?: sonarServerResolver.resolveSonarServer(componentName)
         val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
         val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
         val pluginBuildSystem = sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion)
-        val sonarPluginTask = when (pluginBuildSystem) {
-            BuildSystem.GRADLE -> SONAR_GRADLE_TASK
-            BuildSystem.MAVEN -> SONAR_MAVEN_GOAL
-            else -> ""
-        }
+        val sonarPluginTask =
+            when (pluginBuildSystem) {
+                BuildSystem.GRADLE -> SONAR_GRADLE_TASK
+                BuildSystem.MAVEN -> SONAR_MAVEN_GOAL
+                else -> ""
+            }
 
         return SonarParametersDTO(
             sonarProjectKey = projectContext.projectKey,
@@ -76,30 +76,30 @@ class SonarParametersCalculator(
             sonarServerToken = sonarServer.token,
             skipSonarMetarunnerExecution = skipMetarunnerExecution,
             skipSonarReportGeneration = skipReportGeneration,
-            sonarPluginTask = sonarPluginTask
+            sonarPluginTask = sonarPluginTask,
         )
     }
 
     private fun resolveProjectContext(
         resolvedVcs: ResolvedVCSDTO,
-        sastOverride: SonarProjectOverride?
+        sastOverride: SonarProjectOverride?,
     ): ProjectContext {
         if (sastOverride != null) {
             return ProjectContext(
                 projectKey = sastOverride.sonarProjectKey,
-                projectName = sastOverride.sonarProjectName
+                projectName = sastOverride.sonarProjectName,
             )
         }
 
         return ProjectContext(
             projectKey = "${resolvedVcs.bbProjectKey}_${resolvedVcs.bbRepositoryKey}_$componentName",
-            projectName = "${resolvedVcs.bbProjectKey}/${resolvedVcs.bbRepositoryKey}:$componentName"
+            projectName = "${resolvedVcs.bbProjectKey}/${resolvedVcs.bbRepositoryKey}:$componentName",
         )
     }
 
     private fun resolveBranchContext(
         resolvedVcs: ResolvedVCSDTO,
-        buildMode: BuildMode
+        buildMode: BuildMode,
     ): BranchContext {
         val sourceBranch = resolvedVcs.commit.branch
 
@@ -107,11 +107,12 @@ class SonarParametersCalculator(
             return BranchContext(
                 sourceBranch = sourceBranch,
                 targetBranch = TC_PULL_REQUEST_TARGET_BRANCH_PARAM,
-                sonarExtraParameters = SonarParameterBuilder.forPullRequest(
-                    TC_PULL_REQUEST_NUMBER_PARAM,
-                    TC_PULL_REQUEST_SOURCE_BRANCH_PARAM,
-                    TC_PULL_REQUEST_TARGET_BRANCH_PARAM
-                )
+                sonarExtraParameters =
+                    SonarParameterBuilder.forPullRequest(
+                        TC_PULL_REQUEST_NUMBER_PARAM,
+                        TC_PULL_REQUEST_SOURCE_BRANCH_PARAM,
+                        TC_PULL_REQUEST_TARGET_BRANCH_PARAM,
+                    ),
             )
         }
 
@@ -121,7 +122,7 @@ class SonarParametersCalculator(
         return BranchContext(
             sourceBranch = sourceBranch,
             targetBranch = targetBranch,
-            sonarExtraParameters = SonarParameterBuilder.forBranch(sourceBranch, targetBranch)
+            sonarExtraParameters = SonarParameterBuilder.forBranch(sourceBranch, targetBranch),
         )
     }
 
@@ -132,28 +133,27 @@ class SonarParametersCalculator(
             else -> error("Unexpected sonarServer value '$serverOverride' — validation should have caught this at load time")
         }
 
-    private fun resolveBuildMode(sourceBranch: String): BuildMode {
-        return if (sourceBranch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
+    private fun resolveBuildMode(sourceBranch: String): BuildMode =
+        if (sourceBranch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
             BuildMode.PULL_REQUEST
         } else {
             BuildMode.REGULAR_BRANCH
         }
-    }
 
     private enum class BuildMode {
         PULL_REQUEST,
-        REGULAR_BRANCH
+        REGULAR_BRANCH,
     }
 
     private data class ProjectContext(
         val projectKey: String,
-        val projectName: String
+        val projectName: String,
     )
 
     private data class BranchContext(
         val sourceBranch: String,
         val targetBranch: String,
-        val sonarExtraParameters: String
+        val sonarExtraParameters: String,
     )
 
     companion object {

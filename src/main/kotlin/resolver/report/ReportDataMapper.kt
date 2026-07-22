@@ -10,7 +10,6 @@ import org.octopusden.octopus.sonar.dto.ReportIssueItem
  * Maps SonarQube API DTOs into report-friendly data structures.
  */
 class ReportDataMapper {
-
     fun map(
         fetchedData: ReportDataFetcher.FetchedData,
         componentName: String,
@@ -19,8 +18,8 @@ class ReportDataMapper {
         sonarServerUrl: String,
         sonarProjectKey: String,
         sourceBranch: String,
-    ): ReportData {
-        return ReportData(
+    ): ReportData =
+        ReportData(
             componentName = componentName,
             componentVersion = componentVersion,
             repository = extractRepository(sonarProjectName),
@@ -36,7 +35,6 @@ class ReportDataMapper {
             sonarProjectKey = sonarProjectKey,
             sourceBranch = sourceBranch,
         )
-    }
 
     private fun mapIssue(issue: IssueDTO): ReportIssueItem {
         val impact = issue.impacts.firstOrNull()
@@ -54,8 +52,8 @@ class ReportDataMapper {
         )
     }
 
-    private fun mapHotspot(hotspot: HotspotDTO): ReportHotspotItem {
-        return ReportHotspotItem(
+    private fun mapHotspot(hotspot: HotspotDTO): ReportHotspotItem =
+        ReportHotspotItem(
             message = hotspot.message,
             rule = hotspot.ruleKey ?: "",
             vulnerabilityProbability = hotspot.vulnerabilityProbability ?: "MEDIUM",
@@ -65,7 +63,6 @@ class ReportDataMapper {
             component = hotspot.component,
             key = hotspot.key,
         )
-    }
 
     companion object {
         /**
@@ -73,17 +70,16 @@ class ReportDataMapper {
          * Legacy: BLOCKER, CRITICAL, MAJOR, MINOR, INFO
          * Impact: BLOCKER, HIGH, MEDIUM, LOW, INFO
          */
-        private val LEGACY_SEVERITY_MAP = mapOf(
-            "BLOCKER" to "BLOCKER",
-            "CRITICAL" to "HIGH",
-            "MAJOR" to "MEDIUM",
-            "MINOR" to "LOW",
-            "INFO" to "INFO",
-        )
+        private val LEGACY_SEVERITY_MAP =
+            mapOf(
+                "BLOCKER" to "BLOCKER",
+                "CRITICAL" to "HIGH",
+                "MAJOR" to "MEDIUM",
+                "MINOR" to "LOW",
+                "INFO" to "INFO",
+            )
 
-        fun mapLegacySeverity(severity: String): String {
-            return LEGACY_SEVERITY_MAP[severity.uppercase()] ?: severity
-        }
+        fun mapLegacySeverity(severity: String): String = LEGACY_SEVERITY_MAP[severity.uppercase()] ?: severity
 
         /**
          * Extracts the repository part from the SONAR_PROJECT_NAME.
@@ -101,11 +97,12 @@ class ReportDataMapper {
          * Takes the part after the last colon, then the part after the last '/'.
          */
         fun extractFileName(component: String): String {
-            val afterColon = if (component.contains(':')) {
-                component.substringAfterLast(':')
-            } else {
-                component
-            }
+            val afterColon =
+                if (component.contains(':')) {
+                    component.substringAfterLast(':')
+                } else {
+                    component
+                }
             return afterColon.substringAfterLast('/')
         }
 
@@ -113,9 +110,7 @@ class ReportDataMapper {
          * Formats effort string by inserting space between number and unit.
          * Examples: "1min" → "1 min", "30min" → "30 min", "2h" → "2 h"
          */
-        fun formatEffort(effort: String): String {
-            return effort.replace(Regex("(\\d+)([a-zA-Z]+)"), "$1 $2")
-        }
+        fun formatEffort(effort: String): String = effort.replace(Regex("(\\d+)([a-zA-Z]+)"), "$1 $2")
 
         /**
          * Formats effort total (in minutes) into a human-readable string.
@@ -133,4 +128,3 @@ class ReportDataMapper {
         }
     }
 }
-

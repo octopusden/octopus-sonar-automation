@@ -6,10 +6,36 @@ plugins {
     id("com.gradleup.shadow")
     id("io.github.gradle-nexus.publish-plugin")
     signing
+    // Kotlin static-analysis tools — applied to this (root) Kotlin module; also applied
+    // in the sonar-client subproject. Versions come from settings.gradle.kts pluginManagement.
+    id("io.gitlab.arturbosch.detekt")
+    id("org.jlleitschuh.gradle.ktlint")
+    // Octopus quality-gates convention plugin — configures detekt/ktlint and wires qualityStatic.
+    id("org.octopusden.octopus-quality")
 }
 
 group = "org.octopusden.octopus.sonar"
 description = "Octopus SonarQube Automation"
+
+octopusQuality {
+    // Repo has no coverage tool / no coverage target — disable coverage verification.
+    coverage {
+        enabled.set(false)
+    }
+    // Enforce the gate: detekt/ktlint violations fail the build. Current debt is absorbed
+    // by the committed detekt-baseline.xml / ktlint-baseline.xml files.
+    kotlin {
+        failOnViolation.set(true)
+    }
+}
+
+// NOTE: octopus-quality 2.4.0 gates the ROOT module automatically when it carries its own
+// Kotlin sources (src/main + src/test), configuring detekt/ktlint (shared detekt.yml +
+// .editorconfig, committed baselines, failure enforcement) and folding both tasks into
+// qualityStatic. The previously-required manual detekt/ktlint config + qualityStatic wiring
+// (a 2.3.5 gap workaround) is therefore redundant and has been removed. The detekt/ktlint
+// plugins must still be applied here (see plugins {}) so the plugin can configure them and
+// the hollow-gate guard is satisfied.
 
 repositories {
     mavenCentral()
@@ -19,7 +45,9 @@ dependencies {
     implementation(project(":sonar-client"))
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${properties["jackson.version"]}")
-    implementation("org.octopusden.octopus.infrastructure:components-registry-service-client:${properties["components-registry-client.version"]}")
+    implementation(
+        "org.octopusden.octopus.infrastructure:components-registry-service-client:${properties["components-registry-client.version"]}",
+    )
     implementation("org.octopusden.octopus.vcsfacade:client:${properties["vcs-facade-client.version"]}")
     implementation("com.github.ajalt.clikt:clikt:${properties["clikt.version"]}")
     implementation("ch.qos.logback:logback-classic:${properties["logback.version"]}")
@@ -62,13 +90,14 @@ tasks.register<Zip>("zipMetarunners") {
     from(layout.projectDirectory.dir("metarunners")) {
         filter(
             org.apache.tools.ant.filters.ReplaceTokens::class,
-            "tokens" to mapOf(
-                "name" to project.name,
-                "version" to project.version.toString(),
-                "group" to project.group.toString()
-            ),
+            "tokens" to
+                mapOf(
+                    "name" to project.name,
+                    "version" to project.version.toString(),
+                    "group" to project.group.toString(),
+                ),
             "beginToken" to "\${",
-            "endToken" to "}"
+            "endToken" to "}",
         )
     }
 }
@@ -77,14 +106,18 @@ configurations {
     create("distributions")
 }
 
-val metarunners = artifacts.add(
-    "distributions",
-    layout.buildDirectory.file("distributions/metarunners.zip").get().asFile
-) {
-    classifier = "metarunners"
-    type = "zip"
-    builtBy("zipMetarunners")
-}
+val metarunners =
+    artifacts.add(
+        "distributions",
+        layout.buildDirectory
+            .file("distributions/metarunners.zip")
+            .get()
+            .asFile,
+    ) {
+        classifier = "metarunners"
+        type = "zip"
+        builtBy("zipMetarunners")
+    }
 
 tasks.named("build") {
     dependsOn(tasks.named("zipMetarunners"))
@@ -139,7 +172,9 @@ publishing {
 }
 
 signing {
-    isRequired = System.getenv().containsKey("ORG_GRADLE_PROJECT_signingKey") && System.getenv().containsKey("ORG_GRADLE_PROJECT_signingPassword")
+    isRequired =
+        System.getenv().containsKey("ORG_GRADLE_PROJECT_signingKey") &&
+        System.getenv().containsKey("ORG_GRADLE_PROJECT_signingPassword")
     val signingKey: String? by project
     val signingPassword: String? by project
     useInMemoryPgpKeys(signingKey, signingPassword)

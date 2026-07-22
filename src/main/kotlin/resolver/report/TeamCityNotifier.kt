@@ -38,7 +38,9 @@ class TeamCityNotifier(
 
         if (!result.isQualityGatePassed) {
             messages.add(
-                "##teamcity[buildProblem description='${TeamCityEscaper.escape("Sonar Quality Gate FAILED, details: $dashboardLink")}' identity='sonar-quality-gate']"
+                "##teamcity[buildProblem description='${TeamCityEscaper.escape(
+                    "Sonar Quality Gate FAILED, details: $dashboardLink",
+                )}' identity='sonar-quality-gate']",
             )
             return messages
         }
@@ -49,18 +51,24 @@ class TeamCityNotifier(
             if (isProductionBranch && result.hasFailedMetrics) {
                 val metrics = result.failedMetrics.joinToString(", ")
                 messages.add(
-                    "##teamcity[buildStatus text='${TeamCityEscaper.escape("Warning: ${result.newIssueCount} new SAST issues found and $metrics rating(s) below target - details: $dashboardLink")}']"
+                    "##teamcity[buildStatus text='${TeamCityEscaper.escape(
+                        "Warning: ${result.newIssueCount} new SAST issues found and $metrics rating(s) below target - details: $dashboardLink",
+                    )}']",
                 )
             } else {
                 messages.add(
-                    "##teamcity[buildStatus text='${TeamCityEscaper.escape("Warning: ${result.newIssueCount} new SAST issues found - details: $newIssuesLink")}']"
+                    "##teamcity[buildStatus text='${TeamCityEscaper.escape(
+                        "Warning: ${result.newIssueCount} new SAST issues found - details: $newIssuesLink",
+                    )}']",
                 )
             }
         } else {
             if (isProductionBranch && result.hasFailedMetrics) {
                 val metrics = result.failedMetrics.joinToString(", ")
                 messages.add(
-                    "##teamcity[buildStatus text='${TeamCityEscaper.escape("Warning: SAST $metrics rating(s) below target - details: ${dashboardLink}&codeScope=overall")}']"
+                    "##teamcity[buildStatus text='${TeamCityEscaper.escape(
+                        "Warning: SAST $metrics rating(s) below target - details: $dashboardLink&codeScope=overall",
+                    )}']",
                 )
             }
         }
@@ -73,12 +81,11 @@ class TeamCityNotifier(
          * Translates a branch identifier into the correct URL query parameter.
          * `"pull-requests/123"` → `"pullRequest=123"`, otherwise `"branch=<name>"`.
          */
-        fun branchOrPrParam(branch: String): String {
-            return if (branch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
+        fun branchOrPrParam(branch: String): String =
+            if (branch.startsWith(PULL_REQUEST_BRANCH_MARKER)) {
                 "pullRequest=${URLEncoder.encode(branch.removePrefix(PULL_REQUEST_BRANCH_MARKER), StandardCharsets.UTF_8)}"
             } else {
                 "branch=${URLEncoder.encode(branch, StandardCharsets.UTF_8)}"
             }
-        }
     }
 }

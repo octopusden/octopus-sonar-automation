@@ -49,4 +49,3 @@ data class ReportData(
     val sonarProjectKey: String,
     val sourceBranch: String,
 )
-

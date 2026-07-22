@@ -9,5 +9,5 @@ data class ResolvedVCSDTO(
     val commit: CommitStampDTO,
     val defaultBranches: List<String>,
     val bbProjectKey: String,
-    val bbRepositoryKey: String
+    val bbRepositoryKey: String,
 )

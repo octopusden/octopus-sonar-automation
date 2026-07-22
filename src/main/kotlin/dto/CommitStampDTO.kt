@@ -6,5 +6,5 @@ package org.octopusden.octopus.sonar.dto
 data class CommitStampDTO(
     val cid: String,
     val branch: String,
-    val vcsUrl: String
+    val vcsUrl: String,
 )

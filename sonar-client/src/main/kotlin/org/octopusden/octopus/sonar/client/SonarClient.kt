@@ -14,7 +14,6 @@ import org.octopusden.octopus.sonar.client.dto.QualityGateResponseDTO
  * `&branch=` or `&pullRequest=` query parameter.
  */
 interface SonarClient {
-
     fun getMeasures(
         branch: String,
         component: String,
@@ -49,4 +48,3 @@ interface SonarClient {
         p: Int,
     ): HotspotsResponseDTO
 }
-
