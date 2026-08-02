@@ -24,9 +24,12 @@ octopusQuality {
         enforceCentralPublications.set(true)
         centralPublications.set(
             setOf(
-                // No `jar:all` here despite the shadowJar task existing — the shadow
-                // artifact is built but never added to the publication, confirmed against
-                // Central. So no fat-jar-publication-allowlist entry is needed either.
+                // No `jar:all` here despite the shadowJar task existing — but NOT because the
+                // shadow artifact is unpublished. `tasks.jar { enabled = false }` and a shadowJar
+                // with an empty archiveClassifier put the fat jar into the unclassified `jar`
+                // slot, so it publishes without an `-all` in its filename. It is 16 MB, which is
+                // why release.yml still needs a fat-jar-publication-allowlist entry — on the size
+                // axis rather than the name-pattern axis.
                 ":|maven|org.octopusden.octopus.sonar:sonar-automation|" +
                     "[jar, jar:javadoc, jar:sources, zip:metarunners]",
             ),
