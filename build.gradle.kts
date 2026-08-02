@@ -18,6 +18,20 @@ group = "org.octopusden.octopus.sonar"
 description = "Octopus SonarQube Automation"
 
 octopusQuality {
+    // Regression guard on what this repository publishes to Maven Central. It had none before —
+    // pinned below v2.6.0, so neither this check nor the release-time size guard applied.
+    publication {
+        enforceCentralPublications.set(true)
+        centralPublications.set(
+            setOf(
+                // No `jar:all` here despite the shadowJar task existing — the shadow
+                // artifact is built but never added to the publication, confirmed against
+                // Central. So no fat-jar-publication-allowlist entry is needed either.
+                ":|maven|org.octopusden.octopus.sonar:sonar-automation|" +
+                    "[jar, jar:javadoc, jar:sources, zip:metarunners]",
+            ),
+        )
+    }
     // Repo has no coverage tool / no coverage target — disable coverage verification.
     coverage {
         enabled.set(false)
