@@ -18,6 +18,23 @@ group = "org.octopusden.octopus.sonar"
 description = "Octopus SonarQube Automation"
 
 octopusQuality {
+    // Regression guard on what this repository publishes to Maven Central. It had none before —
+    // pinned below v2.6.0, so neither this check nor the release-time size guard applied.
+    publication {
+        enforceCentralPublications.set(true)
+        centralPublications.set(
+            setOf(
+                // No `jar:all` here despite the shadowJar task existing — but NOT because the
+                // shadow artifact is unpublished. `tasks.jar { enabled = false }` and a shadowJar
+                // with an empty archiveClassifier put the fat jar into the unclassified `jar`
+                // slot, so it publishes without an `-all` in its filename. It is 16 MB, which is
+                // why release.yml still needs a fat-jar-publication-allowlist entry — on the size
+                // axis rather than the name-pattern axis.
+                ":|maven|org.octopusden.octopus.sonar:sonar-automation|" +
+                    "[jar, jar:javadoc, jar:sources, zip:metarunners]",
+            ),
+        )
+    }
     // Repo has no coverage tool / no coverage target — disable coverage verification.
     coverage {
         enabled.set(false)
