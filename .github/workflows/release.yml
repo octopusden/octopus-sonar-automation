@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v2.7.0
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v2.7.1
     with:
       flow-type: public
       # Exempt from the Central size guard that v2.6.0 added. The exemption is needed on the
@@ -14,7 +14,7 @@ jobs:
       # empty archiveClassifier means the fat jar occupies the unclassified `jar` slot itself,
       # so the filename carries no `-all` for the guard's name pattern to match. Measured on
       # release 2.0.13: sonar-automation-2.0.13.jar is 16,790,778 bytes (~16.01 MB) against the
-      # 8 MB default, so the first release on v2.7.0 would fail before upload without this.
+      # 8 MB default, so the first release on octopus-base v2.6.0 or later would fail before upload without this.
       #
       # It must keep publishing: metarunners/DownloadSonarAutomationJAR.xml resolves
       # ${group}:${name}:${version}:jar — no classifier — and runs `java -jar` on it.
