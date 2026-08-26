@@ -3,7 +3,7 @@
 ## Why
 
 Octopus open-source components (`octopusden/*` on GitHub) are built on the same TeamCity chains as
-registered components, but they do not exist in the Components Registry Service. Four CRS calls in
+registered components, but they do not exist in the Components Registry Service. Five CRS calls in
 `calculate-sonar-params` throw `NotFoundException` for them —
 `CommitStampResolver.resolve` (`getVCSSetting`), `SonarServerResolver.resolveSonarServer`
 (`getById`), and `SonarExecutionResolver`'s three public methods — so the command aborts before
@@ -50,7 +50,8 @@ key/name and `sonarServer` value, which are read independently of CRS.
 
 ## Scope
 
-- Registered components behave identically. Every existing test passes unmodified.
+- Registered components behave identically. No pre-existing test assertion changes — existing
+  tests only gain the new `REGISTERED` argument at their call sites.
 - Pull-request builds are untouched: the `pull-requests/` branch marker still wins, and PR
   parameters still come from TeamCity variables.
 - No new CLI option. Registration is discovered, not declared — a component moving into CRS later
@@ -67,4 +68,5 @@ key/name and `sonarServer` value, which are read independently of CRS.
 - `src/main/kotlin/resolver/parameters/SonarExecutionResolver.kt` — takes registration
 - `src/main/kotlin/util/BitbucketSshUrlParser.kt` → `VcsSshUrlParser.kt`
 - `src/main/kotlin/util/BranchConstants.kt` — `UNREGISTERED_TARGET_BRANCH`
+- `detekt-baseline.xml` — entries follow the renamed files
 - `docs/calculate-sonar-parameters.md`

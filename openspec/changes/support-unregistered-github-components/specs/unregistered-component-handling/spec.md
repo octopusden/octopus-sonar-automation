@@ -5,8 +5,9 @@
 Governs how `calculate-sonar-params` produces Sonar parameters for a component that does not exist
 in the Components Registry Service — in practice, `octopusden/*` open-source components hosted on
 GitHub. Defines how registration is detected, and the value of every emitted TeamCity parameter in
-that state. Does not govern registered components, nor pull-request builds, which are resolved
-from TeamCity variables before registration is consulted.
+that state. Does not govern registered components, nor pull-request builds — the `pull-requests/`
+branch check takes precedence over every branch rule here, so PR parameters still come from
+TeamCity variables.
 
 ## ADDED Requirements
 

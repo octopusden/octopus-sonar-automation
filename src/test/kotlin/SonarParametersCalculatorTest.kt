@@ -466,6 +466,30 @@ class SonarParametersCalculatorTest {
         )
     }
 
+    @Test
+    fun `unregistered component in applied-sast keeps the override identity and is still scanned`() {
+        val resolvedVcs = unregisteredVcs(branch = "main")
+        every { componentRegistrationResolver.resolve("my-component") } returns UNREGISTERED
+        every { commitStampResolver.resolve("my-component", "1.0.0", 42, UNREGISTERED) } returns resolvedVcs
+        every { sonarExecutionResolver.getAppliedSastOverride("my-component") } returns
+            SonarProjectOverride(
+                sonarProjectKey = "OVERRIDE_KEY",
+                sonarProjectName = "OVERRIDE/NAME",
+                sonarServer = "developer",
+            )
+        every { sonarExecutionResolver.skipSonarMetarunnerExecution("my-component", "1.0.0", UNREGISTERED) } returns false
+        every { sonarExecutionResolver.skipSonarReportGeneration("my-component", UNREGISTERED) } returns false
+        every { sonarExecutionResolver.resolveSonarPluginBuildSystem("my-component", "1.0.0", UNREGISTERED) } returns null
+
+        val result = calculator.calculate()
+
+        assertEquals("OVERRIDE_KEY", result.sonarProjectKey)
+        assertEquals("OVERRIDE/NAME", result.sonarProjectName)
+        assertEquals(SonarServerParametersDTO.DEVELOPER.id, result.sonarServerId)
+        assertFalse(result.skipSonarMetarunnerExecution)
+        verify(exactly = 0) { sonarServerResolver.resolveSonarServer(any(), any()) }
+    }
+
     private fun stubUnregistered(resolvedVcs: ResolvedVCSDTO) {
         every { componentRegistrationResolver.resolve("my-component") } returns UNREGISTERED
         every { commitStampResolver.resolve("my-component", "1.0.0", 42, UNREGISTERED) } returns resolvedVcs

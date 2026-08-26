@@ -42,14 +42,16 @@ untouched — a changed assertion in an existing test means the registered path 
 
 - [x] 4.1 Add `UNREGISTERED_TARGET_BRANCH` to `BranchConstants`.
 - [x] 4.2 `SonarParametersCalculatorTest`: unregistered non-PR build → `SONAR_TARGET_BRANCH` is
-      `main` **and** the VCS Facade mock records zero interactions. The zero-interaction assertion
-      is the requirement; the returned value alone is not sufficient evidence.
+      `main` **and** `targetBranchResolver` records zero interactions, which is what keeps VCS
+      Facade out of the path. The zero-interaction assertion is the requirement; the returned value
+      alone is not sufficient evidence.
 - [x] 4.3 Add the short-circuit to `resolveBranchContext`.
 
 ## 5. Orchestration
 
-- [x] 5.1 `SonarParametersCalculatorTest`: end-to-end case for an unregistered component asserting
-      all twelve emitted parameters against the spec's scenarios — including
+- [x] 5.1 `SonarParametersCalculatorTest`: end-to-end case for an unregistered component covering
+      all twelve `SonarParametersDTO` fields against the spec's scenarios — ten in the
+      full-parameter-set test, source and target branch in the sibling branch test — including
       `SONAR_RUNNER_EXTRA_PARAMETERS` as the newline-joined form of `SONAR_EXTRA_PARAMETERS`.
 - [x] 5.2 Add `componentRegistrationResolver` to `SonarParametersCalculator`'s default-argument
       constructor list; resolve registration as the first statement of `calculate()` and pass it to
