@@ -240,7 +240,7 @@ An unregistered component gets fixed values for every registry-derived parameter
 | `SONAR_EXTRA_PARAMETERS` / `SONAR_RUNNER_EXTRA_PARAMETERS` | Built from the source/target pair, as for any branch build |
 | `SKIP_SONAR_METARUNNER_EXECUTION` | `false` |
 | `SKIP_SONAR_REPORT_GENERATION` | `false` |
-| `SONAR_TASK` | Empty — the build system cannot be determined without the registry, so the generic metarunner scanner runs rather than the Gradle or Maven Sonar plugin |
+| `SONAR_TASK` | Empty — the build system cannot be determined without the registry |
 
 Registration is checked before the file-based skip rules, so an unregistered component is never skipped — not by `applied-sast.json`, and not by the documentation-component naming rules. A component listed in `applied-sast.json` does still take its project key, name and `sonarServer` from the override, so it is scanned under the override's identity.
 
