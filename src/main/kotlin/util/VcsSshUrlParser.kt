@@ -14,7 +14,6 @@ object VcsSshUrlParser {
 
     private val SCP_LIKE_PATTERN = Pattern.compile("[^@/]+@[^/:]+:([^/]+)/([^/]+?)/?")
 
-    /** `ssh://` is tried first: with an explicit port it also resembles the SCP-like shape. */
     private val PATTERNS = listOf(SSH_URL_PATTERN, SCP_LIKE_PATTERN)
 
     fun parseRepository(sshUrl: String): Pair<String, String> {

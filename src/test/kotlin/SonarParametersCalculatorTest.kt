@@ -402,19 +402,19 @@ class SonarParametersCalculatorTest {
 
     @Test
     fun `unregistered component gets main as target branch without touching the branch resolver`() {
-        val resolvedVcs = unregisteredVcs(branch = "bitbucket-archived-flag")
+        val resolvedVcs = unregisteredVcs(branch = "feature/xyz")
         stubUnregistered(resolvedVcs)
 
         val result = calculator.calculate()
 
-        assertEquals("bitbucket-archived-flag", result.sonarSourceBranch)
+        assertEquals("feature/xyz", result.sonarSourceBranch)
         assertEquals("main", result.sonarTargetBranch)
         verify(exactly = 0) { targetBranchResolver.findTargetBranch(any(), any()) }
     }
 
     @Test
     fun `unregistered component produces the full community metarunner parameter set`() {
-        val resolvedVcs = unregisteredVcs(branch = "bitbucket-archived-flag")
+        val resolvedVcs = unregisteredVcs(branch = "feature/xyz")
         stubUnregistered(resolvedVcs)
 
         val result = calculator.calculate()
@@ -422,11 +422,11 @@ class SonarParametersCalculatorTest {
         assertEquals("OCTOPUSDEN_octopus-external-systems-client_my-component", result.sonarProjectKey)
         assertEquals("OCTOPUSDEN/octopus-external-systems-client:my-component", result.sonarProjectName)
         assertEquals(
-            "-Dsonar.branch.name=bitbucket-archived-flag -Dsonar.newCode.referenceBranch=main",
+            "-Dsonar.branch.name=feature/xyz -Dsonar.newCode.referenceBranch=main",
             result.sonarExtraParameters,
         )
         assertEquals(
-            "-Dsonar.branch.name=bitbucket-archived-flag\n-Dsonar.newCode.referenceBranch=main",
+            "-Dsonar.branch.name=feature/xyz\n-Dsonar.newCode.referenceBranch=main",
             result.sonarRunnerExtraParameters,
         )
         assertEquals(SonarServerParametersDTO.COMMUNITY.id, result.sonarServerId)

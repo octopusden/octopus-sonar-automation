@@ -51,8 +51,8 @@ constant `BranchConstants.UNREGISTERED_TARGET_BRANCH` (`main`), and `TargetBranc
 NOT be invoked.
 
 #### Scenario: Feature branch on an unregistered component
-- **GIVEN** the revision branch is `bitbucket-archived-flag`
-- **THEN** `SONAR_SOURCE_BRANCH` is `bitbucket-archived-flag`
+- **GIVEN** the revision branch is `feature/xyz`
+- **THEN** `SONAR_SOURCE_BRANCH` is `feature/xyz`
 - **AND** `SONAR_TARGET_BRANCH` is `main`
 - **AND** no call is made to VCS Facade
 
