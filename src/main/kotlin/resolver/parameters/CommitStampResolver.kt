@@ -5,8 +5,8 @@ import org.octopusden.octopus.components.registry.core.dto.VersionControlSystemR
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.dto.CommitStampDTO
 import org.octopusden.octopus.sonar.dto.ResolvedVCSDTO
-import org.octopusden.octopus.sonar.util.BitbucketSshUrlParser
 import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
+import org.octopusden.octopus.sonar.util.VcsSshUrlParser
 import org.octopusden.octopus.sonar.util.normalizedBranch
 import org.slf4j.LoggerFactory
 
@@ -25,18 +25,28 @@ class CommitStampResolver(
      * 2. Fetches the component's VCS settings from the Components Registry
      * 3. If the registry reports `NOT_AVAILABLE` or contains no roots, falls back to
      *    [resolveWithoutVcsSettings]; otherwise delegates to [resolveWithVcsSettings]
+     *
+     * An unregistered component has no VCS settings to fetch and takes the
+     * [resolveWithoutVcsSettings] path directly.
      */
     fun resolve(
         componentName: String,
         componentVersion: String,
         teamcityBuildId: Int,
+        registration: ComponentRegistration,
     ): ResolvedVCSDTO {
         val commitStamps = extractCommitStamps(teamcityBuildId)
         require(commitStamps.isNotEmpty()) { "commitStamps must not be empty" }
 
+        if (registration == ComponentRegistration.UNREGISTERED) {
+            return resolveWithoutVcsSettings(commitStamps)
+        }
+
         val vcsSettings = crsClient.getVCSSetting(componentName, componentVersion)
 
-        return if (vcsSettings.externalRegistry == NOT_AVAILABLE_EXTERNAL_REGISTRY || vcsSettings.versionControlSystemRoots.isEmpty()) {
+        return if (vcsSettings.externalRegistry == NOT_AVAILABLE_EXTERNAL_REGISTRY ||
+            vcsSettings.versionControlSystemRoots.isEmpty()
+        ) {
             resolveWithoutVcsSettings(commitStamps)
         } else {
             resolveWithVcsSettings(commitStamps, vcsSettings.versionControlSystemRoots)
@@ -106,11 +116,11 @@ class CommitStampResolver(
     private fun resolveWithoutVcsSettings(commitStamps: List<CommitStampDTO>): ResolvedVCSDTO {
         if (commitStamps.size > 1) {
             logger.warn(
-                "externalRegistry is $NOT_AVAILABLE_EXTERNAL_REGISTRY but ${commitStamps.size} commit stamps found — using the first one.",
+                "No usable VCS settings but ${commitStamps.size} commit stamps found — using the first one.",
             )
         }
         val commit = commitStamps.first()
-        val (projectKey, repoKey) = BitbucketSshUrlParser.parseRepository(commit.vcsUrl)
+        val (projectKey, repoKey) = VcsSshUrlParser.parseRepository(commit.vcsUrl)
         return ResolvedVCSDTO(
             commit = commit,
             defaultBranches = DEFAULT_BRANCH_CANDIDATES,
@@ -145,7 +155,7 @@ class CommitStampResolver(
                 .ifEmpty { null }
                 ?: DEFAULT_BRANCH_CANDIDATES
 
-        val (projectKey, repoKey) = BitbucketSshUrlParser.parseRepository(matchedCommit.vcsUrl)
+        val (projectKey, repoKey) = VcsSshUrlParser.parseRepository(matchedCommit.vcsUrl)
         return ResolvedVCSDTO(
             commit = matchedCommit,
             defaultBranches = branches,

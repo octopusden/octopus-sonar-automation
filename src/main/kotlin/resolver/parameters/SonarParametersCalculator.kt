@@ -8,6 +8,7 @@ import org.octopusden.octopus.sonar.dto.SonarParametersDTO
 import org.octopusden.octopus.sonar.dto.SonarServerParametersDTO
 import org.octopusden.octopus.sonar.util.BranchConstants.DEFAULT_BRANCH_CANDIDATES
 import org.octopusden.octopus.sonar.util.BranchConstants.PULL_REQUEST_BRANCH_MARKER
+import org.octopusden.octopus.sonar.util.BranchConstants.UNREGISTERED_TARGET_BRANCH
 import org.octopusden.octopus.sonar.util.SonarParameterBuilder
 import org.octopusden.octopus.vcsfacade.client.impl.ClassicVcsFacadeClient
 import java.nio.file.Path
@@ -28,6 +29,7 @@ class SonarParametersCalculator(
     private val targetBranchResolver: TargetBranchResolver = TargetBranchResolver(vcsFacadeClient),
     private val sonarServerResolver: SonarServerResolver = SonarServerResolver(crsClient),
     private val sonarExecutionResolver: SonarExecutionResolver = SonarExecutionResolver(crsClient, sonarConfigDir),
+    private val componentRegistrationResolver: ComponentRegistrationResolver = ComponentRegistrationResolver(crsClient),
 ) {
     /**
      * Computes all Sonar parameters for the current build.
@@ -39,24 +41,31 @@ class SonarParametersCalculator(
      * from that override. Branch resolution and extra parameters are identical
      * to regular components.
      *
+     * A component absent from the Components Registry Service uses fixed values for every
+     * registry-derived parameter: Community Edition, `main` as target branch, and the generic
+     * metarunner scanner.
+     *
      * @return A fully populated [org.octopusden.octopus.sonar.dto.SonarParametersDTO].
      */
     fun calculate(): SonarParametersDTO {
-        val resolvedVcs = commitStampResolver.resolve(componentName, componentVersion, teamcityBuildId)
+        val registration = componentRegistrationResolver.resolve(componentName)
+        val resolvedVcs = commitStampResolver.resolve(componentName, componentVersion, teamcityBuildId, registration)
         val buildMode = resolveBuildMode(resolvedVcs.commit.branch)
         val sastOverride = sonarExecutionResolver.getAppliedSastOverride(componentName)
 
         val projectContext = resolveProjectContext(resolvedVcs, sastOverride)
-        val branchContext = resolveBranchContext(resolvedVcs, buildMode)
+        val branchContext = resolveBranchContext(resolvedVcs, buildMode, registration)
 
         val sonarServer =
             sastOverride
                 ?.sonarServer
                 ?.let { resolveServerFromOverride(it) }
-                ?: sonarServerResolver.resolveSonarServer(componentName)
-        val skipMetarunnerExecution = sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion)
-        val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName)
-        val pluginBuildSystem = sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion)
+                ?: sonarServerResolver.resolveSonarServer(componentName, registration)
+        val skipMetarunnerExecution =
+            sonarExecutionResolver.skipSonarMetarunnerExecution(componentName, componentVersion, registration)
+        val skipReportGeneration = sonarExecutionResolver.skipSonarReportGeneration(componentName, registration)
+        val pluginBuildSystem =
+            sonarExecutionResolver.resolveSonarPluginBuildSystem(componentName, componentVersion, registration)
         val sonarPluginTask =
             when (pluginBuildSystem) {
                 BuildSystem.GRADLE -> SONAR_GRADLE_TASK
@@ -100,6 +109,7 @@ class SonarParametersCalculator(
     private fun resolveBranchContext(
         resolvedVcs: ResolvedVCSDTO,
         buildMode: BuildMode,
+        registration: ComponentRegistration,
     ): BranchContext {
         val sourceBranch = resolvedVcs.commit.branch
 
@@ -113,6 +123,14 @@ class SonarParametersCalculator(
                         TC_PULL_REQUEST_SOURCE_BRANCH_PARAM,
                         TC_PULL_REQUEST_TARGET_BRANCH_PARAM,
                     ),
+            )
+        }
+
+        if (registration == ComponentRegistration.UNREGISTERED) {
+            return BranchContext(
+                sourceBranch = sourceBranch,
+                targetBranch = UNREGISTERED_TARGET_BRANCH,
+                sonarExtraParameters = SonarParameterBuilder.forBranch(sourceBranch, UNREGISTERED_TARGET_BRANCH),
             )
         }
 

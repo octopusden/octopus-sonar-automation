@@ -50,13 +50,19 @@ class SonarExecutionResolver(
      * - Component uses Java or Kotlin **and** uses a Gradle or Maven build system **and** either
      *   its `javaVersion` build parameter is `17` or newer, or it is listed in
      *   `mismatch-java-version.txt` - those components are handled by the Gradle/Maven Sonar plugins
+     *
+     * An unregistered component is never skipped on registry grounds; the file-based
+     * applied-SAST and documentation rules above still apply to it.
      */
     fun skipSonarMetarunnerExecution(
         componentName: String,
         componentVersion: String,
+        registration: ComponentRegistration,
     ): Boolean {
         skipIfAppliedSast(componentName)?.let { return it }
         skipIfDoc(componentName)?.let { return it }
+
+        if (registration == ComponentRegistration.UNREGISTERED) return false
 
         val component = crsClient.getDetailedComponent(componentName, componentVersion)
 
@@ -82,9 +88,17 @@ class SonarExecutionResolver(
      * - Component name starts with `doc-` or `doc_` (case-insensitive) or is listed in `other-doc-components.txt`
      * - Component is archived
      * - Component is labelled `test-component`
+     *
+     * An unregistered component is never skipped on registry grounds; the file-based
+     * documentation rule above still applies to it.
      */
-    fun skipSonarReportGeneration(componentName: String): Boolean {
+    fun skipSonarReportGeneration(
+        componentName: String,
+        registration: ComponentRegistration,
+    ): Boolean {
         skipIfDoc(componentName)?.let { return it }
+
+        if (registration == ComponentRegistration.UNREGISTERED) return false
 
         val component = crsClient.getById(componentName)
 
@@ -106,13 +120,18 @@ class SonarExecutionResolver(
      * - Component uses the **Gradle** or **Maven** build system
      * - Component is labelled `java` or `kotlin`
      * - Component uses Java 17 or newer, or is listed in `mismatch-java-version.txt`
+     *
+     * An unregistered component has no build system to inspect, so the plugin never runs for it.
      */
     fun resolveSonarPluginBuildSystem(
         componentName: String,
         componentVersion: String,
+        registration: ComponentRegistration,
     ): BuildSystem? {
         skipIfAppliedSast(componentName)?.let { return null }
         skipIfDoc(componentName)?.let { return null }
+
+        if (registration == ComponentRegistration.UNREGISTERED) return null
 
         val component = crsClient.getDetailedComponent(componentName, componentVersion)
 
