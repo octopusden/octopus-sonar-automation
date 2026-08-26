@@ -64,6 +64,3 @@ untouched — a changed assertion in an existing test means the registered path 
 - [x] 6.1 `docs/calculate-sonar-parameters.md`: new section on unregistered components with the
       parameter table from the proposal; update any text asserting CRS registration is required.
 - [x] 6.2 `./gradlew build` — unit tests, detekt and ktlint.
-- [ ] 6.3 Manual check against the real build in `command.txt`
-      (`--component-name octopus-external-systems-client --teamcity-build-id 12056680`) and
-      against one registered component (`dms-getver`) to confirm no regression.
