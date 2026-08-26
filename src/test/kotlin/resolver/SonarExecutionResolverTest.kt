@@ -528,14 +528,14 @@ class SonarExecutionResolverTest {
     }
 
     @Test
-    fun `applied-sast list still wins for an unregistered component`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0", UNREGISTERED))
+    fun `applied-sast list is not consulted for an unregistered component`() {
+        assertFalse(resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0", UNREGISTERED))
         assertNull(resolver.resolveSonarPluginBuildSystem("component-with-sast", "1.0", UNREGISTERED))
     }
 
     @Test
-    fun `doc prefix still wins for an unregistered component`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("doc-octopus-comp", "1.0", UNREGISTERED))
-        assertTrue(resolver.skipSonarReportGeneration("doc-octopus-comp", UNREGISTERED))
+    fun `doc naming rules are not consulted for an unregistered component`() {
+        assertFalse(resolver.skipSonarMetarunnerExecution("doc-octopus-comp", "1.0", UNREGISTERED))
+        assertFalse(resolver.skipSonarReportGeneration("doc-octopus-comp", UNREGISTERED))
     }
 }

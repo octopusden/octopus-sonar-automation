@@ -242,7 +242,7 @@ An unregistered component gets fixed values for every registry-derived parameter
 | `SKIP_SONAR_REPORT_GENERATION` | `false` |
 | `SONAR_TASK` | Empty — the build system cannot be determined without the registry, so the generic metarunner scanner runs rather than the Gradle or Maven Sonar plugin |
 
-The file-based rules are unaffected: a component listed in `applied-sast.json`, or matching the documentation-component naming rules, is still skipped and still takes its project key, name and `sonarServer` from the override.
+Registration is checked before the file-based skip rules, so an unregistered component is never skipped — not by `applied-sast.json`, and not by the documentation-component naming rules. A component listed in `applied-sast.json` does still take its project key, name and `sonarServer` from the override, so it is scanned under the override's identity.
 
 Pull-request builds are unaffected — PR parameters come from TeamCity variables regardless of registration.
 

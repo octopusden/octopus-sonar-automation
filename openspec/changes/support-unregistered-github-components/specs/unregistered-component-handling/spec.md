@@ -83,21 +83,26 @@ NOT be invoked.
 - **AND** `SKIP_SONAR_REPORT_GENERATION` is `false`
 - **AND** `SONAR_TASK` is empty
 
-### Requirement: File-based skip and override rules SHALL apply regardless of registration
+### Requirement: File-based skip rules SHALL NOT be evaluated for an unregistered component
 
-The `applied-sast.json`, `other-doc-components.txt` and `mismatch-java-version.txt` rules are read
-from `--sonar-config-dir` and SHALL be evaluated before registration is considered.
+Registration SHALL be checked before the `applied-sast.json`, `other-doc-components.txt` and
+`mismatch-java-version.txt` rules in `skipSonarMetarunnerExecution`, `skipSonarReportGeneration`
+and `resolveSonarPluginBuildSystem`. An unregistered component is never skipped.
+
+Project key and name SHALL still come from `applied-sast.json` when the component is listed there,
+and the override's `sonarServer` value SHALL still select the server — those are read through
+`getAppliedSastOverride`, which is independent of registration.
 
 #### Scenario: Unregistered component listed in applied-sast.json
 - **GIVEN** `octopus-example` is absent from CRS but present in `applied-sast.json`
 - **THEN** `SONAR_PROJECT_KEY` and `SONAR_PROJECT_NAME` come from the override
-- **AND** `SKIP_SONAR_METARUNNER_EXECUTION` is `true`
 - **AND** the override's `sonarServer` value, if set, selects the server instead of Community
+- **AND** `SKIP_SONAR_METARUNNER_EXECUTION` is `false` — the component is scanned
 
 #### Scenario: Unregistered documentation component
 - **GIVEN** the component name is `doc-octopus-example` and it is absent from CRS
-- **THEN** `SKIP_SONAR_METARUNNER_EXECUTION` is `true`
-- **AND** `SKIP_SONAR_REPORT_GENERATION` is `true`
+- **THEN** `SKIP_SONAR_METARUNNER_EXECUTION` is `false`
+- **AND** `SKIP_SONAR_REPORT_GENERATION` is `false`
 
 ### Requirement: Pull-request builds SHALL be unaffected by registration
 

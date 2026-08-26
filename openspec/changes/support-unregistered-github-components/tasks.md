@@ -23,13 +23,14 @@ Work test-first: each task's test bullet precedes its implementation bullet.
 ## 3. Thread registration through the resolvers
 
 Each sub-task adds a `registration: ComponentRegistration` parameter and the short-circuit given in
-`design.md`. Existing tests pass `REGISTERED` and are otherwise untouched — a changed assertion in
-an existing test means the registered path regressed.
+`design.md`, as the method's first statement. Existing tests pass `REGISTERED` and are otherwise
+untouched — a changed assertion in an existing test means the registered path regressed.
 
 - [x] 3.1 `SonarServerResolver.resolveSonarServer` → `COMMUNITY`, without calling `getById`.
       Test both branches.
-- [x] 3.2 `SonarExecutionResolver.skipSonarMetarunnerExecution` → `false`. Test: unregistered + in
-      applied-sast → `true`; unregistered + `doc-` prefix → `true`; unregistered plain → `false`.
+- [x] 3.2 `SonarExecutionResolver.skipSonarMetarunnerExecution` → `false`. Test: unregistered +
+      in applied-sast → `false`; unregistered + `doc-` prefix → `false`; unregistered plain →
+      `false`.
 - [x] 3.3 `SonarExecutionResolver.skipSonarReportGeneration` → `false`.
 - [x] 3.4 `SonarExecutionResolver.resolveSonarPluginBuildSystem` → `null`.
 - [x] 3.5 `CommitStampResolver.resolve` → skip `getVCSSetting`, go straight to

@@ -44,9 +44,9 @@ resolvers. When `UNREGISTERED`:
 **`BitbucketSshUrlParser` → `VcsSshUrlParser`**, gaining the SCP-like form
 (`user@host:PROJECT/repo.git`) and an optional port on the `ssh://` form.
 
-**`applied-sast.json` still wins.** It is file-based and independent of CRS, so an unregistered
-component listed there keeps its override key/name and `sonarServer` override, and is still
-skipped.
+**`applied-sast.json` supplies project identity only.** Registration is checked before the
+file-based skip rules, so an unregistered component is never skipped — but it keeps the override's
+key/name and `sonarServer` value, which are read independently of CRS.
 
 ## Scope
 
