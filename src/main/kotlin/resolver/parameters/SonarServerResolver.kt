@@ -15,8 +15,17 @@ class SonarServerResolver(
      * any of [DEVELOPER_LABELS] (`c`, `cpp`, `objective_c`, `swift`) — those languages require
      * SonarQube Developer Edition or above.
      * Otherwise, returns [SonarServerParametersDTO.COMMUNITY].
+     *
+     * An unregistered component has no labels to inspect and always uses Community Edition.
      */
-    fun resolveSonarServer(componentName: String): SonarServerParametersDTO {
+    fun resolveSonarServer(
+        componentName: String,
+        registration: ComponentRegistration,
+    ): SonarServerParametersDTO {
+        if (registration == ComponentRegistration.UNREGISTERED) {
+            return SonarServerParametersDTO.COMMUNITY
+        }
+
         val labels = crsClient.getById(componentName).labels
 
         return if (labels.any { it in DEVELOPER_LABELS }) {

@@ -14,6 +14,8 @@ Given a component name, version, and TeamCity build ID, the tool:
 
 These parameters are then picked up by the downstream Sonar metarunner.
 
+Components absent from the Components Registry — the `octopusden/*` open-source repositories on GitHub — are supported too; see [Unregistered Components](#unregistered-components).
+
 ### Legacy Override Support
 
 Components with SonarQube analysis already set up manually are supported via configuration files from the `RELENG/sonar-config` repository:
@@ -67,6 +69,7 @@ Each entry in `applied-sast.json` has the following shape:
 |---------------------------------------|--------------------------------------------------|-----------------------------------------------------|
 | Default                               | `<BB_PROJECT>_<BB_REPO>_<COMPONENT>`             | `<BB_PROJECT>/<BB_REPO>:<COMPONENT>`                |
 | Component in `applied-sast.json`      | Value from override file                         | Value from override file                            |
+| Unregistered component                | `<PROJECT>_<REPO>_<COMPONENT>` from the SSH remote | `<PROJECT>/<REPO>:<COMPONENT>` from the SSH remote |
 
 Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS changes and matched against the component's VCS settings from the Components Registry.
 - If no VCS settings are configured, defaults to the first VCS change found for the build.
@@ -78,6 +81,7 @@ Where `<BB_PROJECT>` and `<BB_REPO>` are extracted from the TeamCity build's VCS
 |--------------|--------------------------------------|----------------------------------------------------------------|
 | Branch build | Branch from matched VCS settings     | Resolved via [Target Branch Analysis](#target-branch-analysis) |
 | PR build     | `pull-requests/<PR_NUMBER>` from VCS | `%teamcity.pullRequest.target.branch%`                         |
+| Unregistered branch build | Branch from the build's VCS revision | `main` — fixed, no analysis                       |
 
 ### Sonar Server ID, URL, and Token
 
@@ -87,6 +91,8 @@ Normally determined by the component's language labels from the Components Regis
 |----------------------------------------|----------------------|
 | `c`, `cpp`, `objective_c`, `swift`     | Developer Edition    |
 | Everything else                        | Community Edition    |
+
+An unregistered component has no labels to inspect and always uses Community Edition.
 
 When `sonarServer` is set in `applied-sast.json` for the component, that value takes precedence over the automatic label-based selection. This is useful when a component carries `cpp` labels but actually runs its Sonar analysis on the Community Edition server. See [applied-sast.json override](#legacy-override-support) for details.
 
@@ -154,6 +160,8 @@ For **pull-request builds**, the target branch is simply read from the TeamCity 
 
 For **regular branch builds**, the tool must determine which production/release branch the source branch was forked from. This is handled by the `TargetBranchResolver`, which compares commit histories via VCS Facade.
 
+For **unregistered components**, the target branch is fixed at `main` and `TargetBranchResolver` is not invoked — VCS Facade has no GitHub provider, so every lookup would fail after a long retry.
+
 ### Algorithm
 
 1. **Single candidate**: if only one candidate branch exists, it is returned immediately with no VCS Facade calls.
@@ -214,6 +222,31 @@ Result: release/1.0
 ```
 
 This ensures the most recently diverged branch is always returned, regardless of candidate order.
+
+---
+
+## Unregistered Components
+
+Octopus open-source components (`octopusden/*` on GitHub) run on the same TeamCity chains but are not registered in the Components Registry Service. Registration is probed once per invocation via `getById`; a `NotFoundException` marks the component unregistered, while any other registry failure fails the build.
+
+An unregistered component gets fixed values for every registry-derived parameter:
+
+| Parameter | Value |
+|---|---|
+| `SONAR_PROJECT_KEY` / `SONAR_PROJECT_NAME` | Derived from the build's SSH remote, as for any component |
+| `SONAR_SOURCE_BRANCH` | The build's VCS revision branch |
+| `SONAR_TARGET_BRANCH` | `main` |
+| `SONAR_SERVER_ID` / `_URL` / `_TOKEN` | Community Edition |
+| `SONAR_EXTRA_PARAMETERS` / `SONAR_RUNNER_EXTRA_PARAMETERS` | Built from the source/target pair, as for any branch build |
+| `SKIP_SONAR_METARUNNER_EXECUTION` | `false` |
+| `SKIP_SONAR_REPORT_GENERATION` | `false` |
+| `SONAR_TASK` | Empty — the build system cannot be determined without the registry |
+
+Registration is checked before the file-based skip rules, so an unregistered component is never skipped — not by `applied-sast.json`, and not by the documentation-component naming rules. A component listed in `applied-sast.json` does still take its project key, name and `sonarServer` from the override, so it is scanned under the override's identity.
+
+Pull-request builds are unaffected — PR parameters come from TeamCity variables regardless of registration.
+
+Both SSH remote forms are accepted: `ssh://git@host[:port]/PROJECT/repo.git` and the SCP-like `git@github.com:PROJECT/repo.git`.
 
 ---
 

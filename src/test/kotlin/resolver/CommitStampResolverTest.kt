@@ -2,9 +2,12 @@ package org.octopusden.octopus.sonar.resolver
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
 import org.octopusden.octopus.sonar.client.TeamcityRestClient
 import org.octopusden.octopus.sonar.resolver.parameters.CommitStampResolver
+import org.octopusden.octopus.sonar.resolver.parameters.ComponentRegistration.REGISTERED
+import org.octopusden.octopus.sonar.resolver.parameters.ComponentRegistration.UNREGISTERED
 import org.octopusden.octopus.sonar.test.Fixtures
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -31,7 +34,7 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting("comp", "1.0") } returns Fixtures.noVcsSettings()
 
-        val result = resolver.resolve("comp", "1.0", 1)
+        val result = resolver.resolve("comp", "1.0", 1, REGISTERED)
 
         assertEquals("MYPROJ", result.bbProjectKey)
         assertEquals("my-repo", result.bbRepositoryKey)
@@ -46,7 +49,7 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.noVcsSettings()
 
-        val result = resolver.resolve("comp", "1.0", 1)
+        val result = resolver.resolve("comp", "1.0", 1, REGISTERED)
 
         assertEquals("feature/abc", result.commit.branch)
     }
@@ -61,7 +64,7 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(2) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.noVcsSettings()
 
-        val result = resolver.resolve("comp", "1.0", 1)
+        val result = resolver.resolve("comp", "1.0", 1, REGISTERED)
 
         assertEquals("aaa", result.commit.cid)
     }
@@ -79,7 +82,7 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(2) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.vcsSettings()
 
-        val result = resolver.resolve("comp", "1.0", 1)
+        val result = resolver.resolve("comp", "1.0", 1, REGISTERED)
 
         assertEquals("bbb", result.commit.cid)
         assertEquals("MYPROJ", result.bbProjectKey)
@@ -92,7 +95,7 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.vcsSettings(branch = "main | release/1.0 | release/2.0")
 
-        val result = resolver.resolve("comp", "1.0", 1)
+        val result = resolver.resolve("comp", "1.0", 1, REGISTERED)
 
         assertEquals(listOf("main", "release/1.0", "release/2.0"), result.defaultBranches)
     }
@@ -103,7 +106,7 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.vcsSettings(branch = "")
 
-        val result = resolver.resolve("comp", "1.0", 1)
+        val result = resolver.resolve("comp", "1.0", 1, REGISTERED)
 
         assertEquals(listOf("main", "master"), result.defaultBranches)
     }
@@ -117,7 +120,7 @@ class CommitStampResolverTest {
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.vcsSettings()
 
         assertFailsWith<IllegalStateException> {
-            resolver.resolve("comp", "1.0", 1)
+            resolver.resolve("comp", "1.0", 1, REGISTERED)
         }
     }
 
@@ -133,7 +136,7 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(2) } returns Fixtures.tcVcsRootInstance()
         every { crsClient.getVCSSetting(any(), any()) } returns Fixtures.noVcsSettings()
 
-        val result = resolver.resolve("comp", "1.0", 1)
+        val result = resolver.resolve("comp", "1.0", 1, REGISTERED)
 
         assertEquals("git-rev", result.commit.cid)
     }
@@ -146,7 +149,43 @@ class CommitStampResolverTest {
         every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcCvsRootInstance()
 
         assertFailsWith<IllegalArgumentException> {
-            resolver.resolve("comp", "1.0", 1)
+            resolver.resolve("comp", "1.0", 1, REGISTERED)
+        }
+    }
+
+    // ── unregistered components ───────────────────────────────────────────────
+
+    @Test
+    fun `unregistered component resolves from the GitHub SCP-like remote`() {
+        val githubUrl = "git@github.com:octopusden/octopus-external-systems-client.git"
+        every { teamcityClient.getBuildById(1) } returns
+            Fixtures.tcBuildResponse(listOf(Fixtures.tcRevision(branch = "refs/heads/bitbucket-archived-flag")))
+        every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcVcsRootInstance(githubUrl)
+
+        val result = resolver.resolve("octopus-external-systems-client", "2.0.105", 1, UNREGISTERED)
+
+        assertEquals("OCTOPUSDEN", result.bbProjectKey)
+        assertEquals("octopus-external-systems-client", result.bbRepositoryKey)
+        assertEquals("bitbucket-archived-flag", result.commit.branch)
+        assertEquals(listOf("main", "master"), result.defaultBranches)
+    }
+
+    @Test
+    fun `unregistered component does not query VCS settings`() {
+        every { teamcityClient.getBuildById(1) } returns Fixtures.tcBuildResponse(listOf(Fixtures.tcRevision()))
+        every { teamcityClient.getVcsRootInstance(1) } returns Fixtures.tcVcsRootInstance()
+
+        resolver.resolve("octopus-comp", "1.0", 1, UNREGISTERED)
+
+        verify(exactly = 0) { crsClient.getVCSSetting(any(), any()) }
+    }
+
+    @Test
+    fun `unregistered component with no revisions still fails`() {
+        every { teamcityClient.getBuildById(1) } returns Fixtures.tcBuildResponse(emptyList())
+
+        assertFailsWith<IllegalArgumentException> {
+            resolver.resolve("octopus-comp", "1.0", 1, UNREGISTERED)
         }
     }
 }

@@ -5,6 +5,8 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient
 import org.octopusden.octopus.components.registry.core.dto.BuildSystem
+import org.octopusden.octopus.sonar.resolver.parameters.ComponentRegistration.REGISTERED
+import org.octopusden.octopus.sonar.resolver.parameters.ComponentRegistration.UNREGISTERED
 import org.octopusden.octopus.sonar.resolver.parameters.SonarExecutionResolver
 import org.octopusden.octopus.sonar.test.Fixtures
 import java.nio.file.Files
@@ -43,23 +45,23 @@ class SonarExecutionResolverTest {
 
     @Test
     fun `metarunner skipped for component in applied-sast list`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skip for applied-sast component does not call CRS`() {
-        resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0")
+        resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0", REGISTERED)
         verify(exactly = 0) { crsClient.getDetailedComponent(any(), any()) }
     }
 
     @Test
     fun `metarunner skipped for component in applied-sast list (JSON-based config)`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skip for applied-sast component (JSON-based config) does not call CRS`() {
-        resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0")
+        resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0", REGISTERED)
         verify(exactly = 0) { crsClient.getDetailedComponent(any(), any()) }
     }
 
@@ -82,44 +84,44 @@ class SonarExecutionResolverTest {
 
     @Test
     fun `metarunner skipped for component name starting with doc-`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("doc-component", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("doc-component", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for component name starting with doc_`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("doc_component", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("doc_component", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for component name starting with DOC_ (case-insensitive)`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("DOC_format", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("DOC_format", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for component name ending with -doc`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("component-doc", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("component-doc", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for component name ending with _doc`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("component_doc", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("component_doc", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for component name ending with -DOC (case-insensitive)`() {
-        assertTrue(resolver.skipSonarMetarunnerExecution("component-DOC", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("component-DOC", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner not skipped for component name starting with doc but not doc- prefix`() {
         every { crsClient.getDetailedComponent("docker-registry", "1.0") } returns Fixtures.detailedComponent()
-        assertFalse(resolver.skipSonarMetarunnerExecution("docker-registry", "1.0"))
+        assertFalse(resolver.skipSonarMetarunnerExecution("docker-registry", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for component in other-doc-components list`() {
         // "other-doc-component" is in other-doc-components.txt
-        assertTrue(resolver.skipSonarMetarunnerExecution("other-doc-component", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("other-doc-component", "1.0", REGISTERED))
     }
 
     // ── archived ──────────────────────────────────────────────────────────────
@@ -127,7 +129,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `metarunner skipped for archived component`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(archived = true)
-        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     // ── test-component label ──────────────────────────────────────────────────
@@ -135,7 +137,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `metarunner skipped for component labelled test-component`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("test-component"))
-        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     // ── java/kotlin with modern JDK ───────────────────────────────────────────
@@ -144,35 +146,35 @@ class SonarExecutionResolverTest {
     fun `metarunner skipped for java component with javaVersion 17`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "17")
-        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for java component with javaVersion 21`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "21")
-        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for kotlin component with javaVersion 17`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("kotlin"), javaVersion = "17")
-        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for java component with javaVersion 25`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "25")
-        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner skipped for java component with future javaVersion beyond current LTS releases`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "29")
-        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -180,7 +182,7 @@ class SonarExecutionResolverTest {
         // "mismatch-java-component" is the first entry in mismatch-java-version.txt
         every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "21")
-        assertTrue(resolver.skipSonarMetarunnerExecution("mismatch-java-component", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("mismatch-java-component", "1.0", REGISTERED))
     }
 
     // ── should NOT skip ───────────────────────────────────────────────────────
@@ -188,20 +190,20 @@ class SonarExecutionResolverTest {
     @Test
     fun `metarunner not skipped for regular active component`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent()
-        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner not skipped for java component on old javaVersion not in mismatch list`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "8")
-        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner not skipped for java component with no javaVersion and not in mismatch list`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("java"))
-        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -209,14 +211,14 @@ class SonarExecutionResolverTest {
         // mismatch-java-component is in mismatch-java-version.txt, meaning it actually uses modern JDK
         every { crsClient.getDetailedComponent("mismatch-java-component", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("java"), javaVersion = "8")
-        assertTrue(resolver.skipSonarMetarunnerExecution("mismatch-java-component", "1.0"))
+        assertTrue(resolver.skipSonarMetarunnerExecution("mismatch-java-component", "1.0", REGISTERED))
     }
 
     @Test
     fun `metarunner not skipped for non-java non-kotlin component even with modern javaVersion`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns
             Fixtures.detailedComponent(labels = setOf("python"), javaVersion = "17")
-        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -227,7 +229,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "17",
                 buildSystem = BuildSystem.PROVIDED,
             )
-        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0"))
+        assertFalse(resolver.skipSonarMetarunnerExecution("comp", "1.0", REGISTERED))
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -238,32 +240,32 @@ class SonarExecutionResolverTest {
 
     @Test
     fun `report generation skipped for component name starting with doc-`() {
-        assertTrue(resolver.skipSonarReportGeneration("doc-api"))
+        assertTrue(resolver.skipSonarReportGeneration("doc-api", REGISTERED))
     }
 
     @Test
     fun `report generation skipped for component name starting with doc_`() {
-        assertTrue(resolver.skipSonarReportGeneration("doc_api"))
+        assertTrue(resolver.skipSonarReportGeneration("doc_api", REGISTERED))
     }
 
     @Test
     fun `report generation skipped for component name ending with -doc`() {
-        assertTrue(resolver.skipSonarReportGeneration("component-doc"))
+        assertTrue(resolver.skipSonarReportGeneration("component-doc", REGISTERED))
     }
 
     @Test
     fun `report generation skipped for component name ending with _doc`() {
-        assertTrue(resolver.skipSonarReportGeneration("component_doc"))
+        assertTrue(resolver.skipSonarReportGeneration("component_doc", REGISTERED))
     }
 
     @Test
     fun `report generation skipped for component name ending with -DOC (case-insensitive)`() {
-        assertTrue(resolver.skipSonarReportGeneration("component-DOC"))
+        assertTrue(resolver.skipSonarReportGeneration("component-DOC", REGISTERED))
     }
 
     @Test
     fun `report generation skipped for component in other-doc-components list`() {
-        assertTrue(resolver.skipSonarReportGeneration("other-doc-component"))
+        assertTrue(resolver.skipSonarReportGeneration("other-doc-component", REGISTERED))
     }
 
     // ── archived ──────────────────────────────────────────────────────────────
@@ -271,7 +273,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `report generation skipped for archived component`() {
         every { crsClient.getById("comp") } returns Fixtures.componentV1(archived = true)
-        assertTrue(resolver.skipSonarReportGeneration("comp"))
+        assertTrue(resolver.skipSonarReportGeneration("comp", REGISTERED))
     }
 
     // ── test-component label ──────────────────────────────────────────────────
@@ -279,7 +281,7 @@ class SonarExecutionResolverTest {
     @Test
     fun `report generation skipped for component labelled test-component`() {
         every { crsClient.getById("comp") } returns Fixtures.componentV1(labels = listOf("test-component"))
-        assertTrue(resolver.skipSonarReportGeneration("comp"))
+        assertTrue(resolver.skipSonarReportGeneration("comp", REGISTERED))
     }
 
     // ── should NOT skip ───────────────────────────────────────────────────────
@@ -287,13 +289,13 @@ class SonarExecutionResolverTest {
     @Test
     fun `report generation not skipped for regular active component`() {
         every { crsClient.getById("comp") } returns Fixtures.componentV1()
-        assertFalse(resolver.skipSonarReportGeneration("comp"))
+        assertFalse(resolver.skipSonarReportGeneration("comp", REGISTERED))
     }
 
     @Test
     fun `report generation not skipped for component in applied-sast list`() {
         every { crsClient.getById("component-with-sast") } returns Fixtures.componentV1()
-        assertFalse(resolver.skipSonarReportGeneration("component-with-sast"))
+        assertFalse(resolver.skipSonarReportGeneration("component-with-sast", REGISTERED))
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -304,29 +306,29 @@ class SonarExecutionResolverTest {
 
     @Test
     fun `plugin skipped for component in applied-sast list`() {
-        assertNull(resolver.resolveSonarPluginBuildSystem("component-with-sast", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("component-with-sast", "1.0", REGISTERED))
     }
 
     @Test
     fun `plugin skipped for doc component`() {
-        assertNull(resolver.resolveSonarPluginBuildSystem("doc-component", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("doc-component", "1.0", REGISTERED))
     }
 
     @Test
     fun `plugin skipped for other-doc-components list`() {
-        assertNull(resolver.resolveSonarPluginBuildSystem("other-doc-component", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("other-doc-component", "1.0", REGISTERED))
     }
 
     @Test
     fun `plugin skipped for archived component`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(archived = true)
-        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
     fun `plugin skipped for test-component`() {
         every { crsClient.getDetailedComponent("comp", "1.0") } returns Fixtures.detailedComponent(labels = setOf("test-component"))
-        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -337,7 +339,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "17",
                 buildSystem = BuildSystem.PROVIDED,
             )
-        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -348,7 +350,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "17",
                 buildSystem = BuildSystem.GRADLE,
             )
-        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -359,7 +361,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "8",
                 buildSystem = BuildSystem.GRADLE,
             )
-        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -370,7 +372,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "8",
                 buildSystem = BuildSystem.MAVEN,
             )
-        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertNull(resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     // ── should return GRADLE ──────────────────────────────────────────────
@@ -383,7 +385,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "17",
                 buildSystem = BuildSystem.GRADLE,
             )
-        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -394,7 +396,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "21",
                 buildSystem = BuildSystem.GRADLE,
             )
-        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -405,7 +407,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "25",
                 buildSystem = BuildSystem.GRADLE,
             )
-        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -416,7 +418,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "8",
                 buildSystem = BuildSystem.GRADLE,
             )
-        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("mismatch-java-component", "1.0"))
+        assertEquals(BuildSystem.GRADLE, resolver.resolveSonarPluginBuildSystem("mismatch-java-component", "1.0", REGISTERED))
     }
 
     // ── should return MAVEN ───────────────────────────────────────────────
@@ -429,7 +431,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "17",
                 buildSystem = BuildSystem.MAVEN,
             )
-        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -440,7 +442,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "21",
                 buildSystem = BuildSystem.MAVEN,
             )
-        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -451,7 +453,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "25",
                 buildSystem = BuildSystem.MAVEN,
             )
-        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0"))
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("comp", "1.0", REGISTERED))
     }
 
     @Test
@@ -462,7 +464,7 @@ class SonarExecutionResolverTest {
                 javaVersion = "8",
                 buildSystem = BuildSystem.MAVEN,
             )
-        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("mismatch-java-component", "1.0"))
+        assertEquals(BuildSystem.MAVEN, resolver.resolveSonarPluginBuildSystem("mismatch-java-component", "1.0", REGISTERED))
     }
 
     @Test
@@ -477,7 +479,7 @@ class SonarExecutionResolverTest {
 
         val externalResolver = SonarExecutionResolver(crsClient, configDir)
 
-        assertTrue(externalResolver.skipSonarMetarunnerExecution("external-sast", "1.0"))
+        assertTrue(externalResolver.skipSonarMetarunnerExecution("external-sast", "1.0", REGISTERED))
         verify(exactly = 0) { crsClient.getDetailedComponent(any(), any()) }
     }
 
@@ -493,7 +495,47 @@ class SonarExecutionResolverTest {
 
         val externalResolver = SonarExecutionResolver(crsClient, configDir)
 
-        assertTrue(externalResolver.skipSonarReportGeneration("external-doc"))
+        assertTrue(externalResolver.skipSonarReportGeneration("external-doc", REGISTERED))
         verify(exactly = 0) { crsClient.getById(any()) }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // unregistered components
+    // ════════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun `metarunner runs for an unregistered component`() {
+        assertFalse(resolver.skipSonarMetarunnerExecution("octopus-comp", "1.0", UNREGISTERED))
+    }
+
+    @Test
+    fun `report generation runs for an unregistered component`() {
+        assertFalse(resolver.skipSonarReportGeneration("octopus-comp", UNREGISTERED))
+    }
+
+    @Test
+    fun `no sonar plugin build system for an unregistered component`() {
+        assertNull(resolver.resolveSonarPluginBuildSystem("octopus-comp", "1.0", UNREGISTERED))
+    }
+
+    @Test
+    fun `unregistered component does not query the registry`() {
+        resolver.skipSonarMetarunnerExecution("octopus-comp", "1.0", UNREGISTERED)
+        resolver.skipSonarReportGeneration("octopus-comp", UNREGISTERED)
+        resolver.resolveSonarPluginBuildSystem("octopus-comp", "1.0", UNREGISTERED)
+        verify(exactly = 0) { crsClient.getById(any()) }
+        verify(exactly = 0) { crsClient.getDetailedComponent(any(), any()) }
+    }
+
+    @Test
+    fun `applied-sast list is not consulted for an unregistered component`() {
+        assertFalse(resolver.skipSonarMetarunnerExecution("component-with-sast", "1.0", UNREGISTERED))
+        assertNull(resolver.resolveSonarPluginBuildSystem("component-with-sast", "1.0", UNREGISTERED))
+    }
+
+    @Test
+    fun `doc naming rules are not consulted for an unregistered component`() {
+        assertFalse(resolver.skipSonarMetarunnerExecution("doc-octopus-comp", "1.0", UNREGISTERED))
+        assertFalse(resolver.skipSonarReportGeneration("doc-octopus-comp", UNREGISTERED))
     }
 }

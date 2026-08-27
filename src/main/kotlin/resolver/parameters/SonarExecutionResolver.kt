@@ -50,11 +50,16 @@ class SonarExecutionResolver(
      * - Component uses Java or Kotlin **and** uses a Gradle or Maven build system **and** either
      *   its `javaVersion` build parameter is `17` or newer, or it is listed in
      *   `mismatch-java-version.txt` - those components are handled by the Gradle/Maven Sonar plugins
+     *
+     * An unregistered component is never skipped — none of the rules above are evaluated for it.
      */
     fun skipSonarMetarunnerExecution(
         componentName: String,
         componentVersion: String,
+        registration: ComponentRegistration,
     ): Boolean {
+        if (registration == ComponentRegistration.UNREGISTERED) return false
+
         skipIfAppliedSast(componentName)?.let { return it }
         skipIfDoc(componentName)?.let { return it }
 
@@ -82,8 +87,15 @@ class SonarExecutionResolver(
      * - Component name starts with `doc-` or `doc_` (case-insensitive) or is listed in `other-doc-components.txt`
      * - Component is archived
      * - Component is labelled `test-component`
+     *
+     * An unregistered component is never skipped — none of the rules above are evaluated for it.
      */
-    fun skipSonarReportGeneration(componentName: String): Boolean {
+    fun skipSonarReportGeneration(
+        componentName: String,
+        registration: ComponentRegistration,
+    ): Boolean {
+        if (registration == ComponentRegistration.UNREGISTERED) return false
+
         skipIfDoc(componentName)?.let { return it }
 
         val component = crsClient.getById(componentName)
@@ -106,11 +118,17 @@ class SonarExecutionResolver(
      * - Component uses the **Gradle** or **Maven** build system
      * - Component is labelled `java` or `kotlin`
      * - Component uses Java 17 or newer, or is listed in `mismatch-java-version.txt`
+     *
+     * An unregistered component has no build system to inspect, so the plugin never runs for it
+     * and none of the rules above are evaluated.
      */
     fun resolveSonarPluginBuildSystem(
         componentName: String,
         componentVersion: String,
+        registration: ComponentRegistration,
     ): BuildSystem? {
+        if (registration == ComponentRegistration.UNREGISTERED) return null
+
         skipIfAppliedSast(componentName)?.let { return null }
         skipIfDoc(componentName)?.let { return null }
 

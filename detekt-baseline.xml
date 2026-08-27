@@ -2,14 +2,11 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ClassOrdering:BitbucketSshUrlParser.kt$BitbucketSshUrlParser$/** Matches: ssh://user@host/PROJECT/repo.git */ private val SSH_URL_PATTERN = Pattern.compile("ssh://[^@]+@[^/]+/([^/]+)/([^/]+)")</ID>
     <ID>ClassOrdering:QualityGateChecker.kt$QualityGateChecker$Companion</ID>
     <ID>ClassOrdering:ReportDataFetcher.kt$ReportDataFetcher$Companion</ID>
     <ID>ClassOrdering:ReportHtmlRenderer.kt$ReportHtmlRenderer$Companion</ID>
     <ID>CyclomaticComplexMethod:TargetBranchResolver.kt$TargetBranchResolver$fun findTargetBranch( commit: CommitStampDTO, candidates: List&lt;String>, ): String</ID>
     <ID>ForbiddenComment:TeamcityClient.kt$TeamcityRestClient$* Lightweight HTTP client for the TeamCity REST API. * TODO: To be replaced with octopus-external-system-clients</ID>
-    <ID>InvalidPackageDeclaration:BitbucketSshUrlParser.kt$package org.octopusden.octopus.sonar.util</ID>
-    <ID>InvalidPackageDeclaration:BitbucketSshUrlParserTest.kt$package org.octopusden.octopus.sonar.util</ID>
     <ID>InvalidPackageDeclaration:BranchConstants.kt$package org.octopusden.octopus.sonar.util</ID>
     <ID>InvalidPackageDeclaration:BranchUtils.kt$package org.octopusden.octopus.sonar.util</ID>
     <ID>InvalidPackageDeclaration:BranchUtilsTest.kt$package org.octopusden.octopus.sonar.util</ID>
@@ -17,6 +14,8 @@
     <ID>InvalidPackageDeclaration:CommitStampDTO.kt$package org.octopusden.octopus.sonar.dto</ID>
     <ID>InvalidPackageDeclaration:CommitStampResolver.kt$package org.octopusden.octopus.sonar.resolver.parameters</ID>
     <ID>InvalidPackageDeclaration:CommitStampResolverTest.kt$package org.octopusden.octopus.sonar.resolver</ID>
+    <ID>InvalidPackageDeclaration:ComponentRegistrationResolver.kt$package org.octopusden.octopus.sonar.resolver.parameters</ID>
+    <ID>InvalidPackageDeclaration:ComponentRegistrationResolverTest.kt$package org.octopusden.octopus.sonar.resolver</ID>
     <ID>InvalidPackageDeclaration:Fixtures.kt$package org.octopusden.octopus.sonar.test</ID>
     <ID>InvalidPackageDeclaration:Main.kt$package org.octopusden.octopus.sonar</ID>
     <ID>InvalidPackageDeclaration:QualityGateCheckResult.kt$package org.octopusden.octopus.sonar.dto</ID>
@@ -47,6 +46,8 @@
     <ID>InvalidPackageDeclaration:TeamCityNotifier.kt$package org.octopusden.octopus.sonar.resolver.report</ID>
     <ID>InvalidPackageDeclaration:TeamCityNotifierTest.kt$package org.octopusden.octopus.sonar.resolver.report</ID>
     <ID>InvalidPackageDeclaration:TeamcityClient.kt$package org.octopusden.octopus.sonar.client</ID>
+    <ID>InvalidPackageDeclaration:VcsSshUrlParser.kt$package org.octopusden.octopus.sonar.util</ID>
+    <ID>InvalidPackageDeclaration:VcsSshUrlParserTest.kt$package org.octopusden.octopus.sonar.util</ID>
     <ID>LoopWithTooManyJumpStatements:TargetBranchResolver.kt$TargetBranchResolver$for</ID>
     <ID>MatchingDeclarationName:Main.kt$SonarAutomationCli : CliktCommand</ID>
     <ID>MatchingDeclarationName:SonarServerDTO.kt$SonarServerParametersDTO</ID>
