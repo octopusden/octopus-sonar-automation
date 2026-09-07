@@ -18,18 +18,16 @@ group = "org.octopusden.octopus.sonar"
 description = "Octopus SonarQube Automation"
 
 octopusQuality {
-    // Regression guard on what this repository publishes to Maven Central. It had none before —
-    // pinned below v2.6.0, so neither this check nor the release-time size guard applied.
+    // Regression guard on what this repository publishes. It compares the publications the build
+    // DECLARES, so the routed one is still listed: the release-time guard no longer sees it, and
+    // this is what watches its shape.
     publication {
         enforceCentralPublications.set(true)
         centralPublications.set(
             setOf(
-                // No `jar:all` here despite the shadowJar task existing — but NOT because the
-                // shadow artifact is unpublished. `tasks.jar { enabled = false }` and a shadowJar
-                // with an empty archiveClassifier put the fat jar into the unclassified `jar`
-                // slot, so it publishes without an `-all` in its filename. It is 16 MB, which is
-                // why release.yml still needs a fat-jar-publication-allowlist entry — on the size
-                // axis rather than the name-pattern axis.
+                // No `jar:all` despite the shadowJar task existing: `tasks.jar { enabled = false }`
+                // and a shadowJar with an empty archiveClassifier put the fat jar into the
+                // unclassified `jar` slot, so it publishes without an `-all` in its filename.
                 ":|maven|org.octopusden.octopus.sonar:sonar-automation|" +
                     "[jar, jar:javadoc, jar:sources, zip:metarunners]",
             ),
@@ -183,6 +181,17 @@ publishing {
                         name.set("octopus")
                     }
                 }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/octopusden/octopus-sonar-automation")
+            credentials {
+                username = System.getenv("GITHUB_PACKAGES_USERNAME")
+                password = System.getenv("GITHUB_PACKAGES_TOKEN")
             }
         }
     }
