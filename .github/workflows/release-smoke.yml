@@ -26,5 +26,6 @@ jobs:
       java-version: '21'
       publish-to-nexus: false
       github-packages-publications: ":maven"
+      github-packages-repository: octopusden/octopus-maven-packages
       dry-run: true
     secrets: inherit
