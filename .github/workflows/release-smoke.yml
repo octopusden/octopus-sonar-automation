@@ -20,7 +20,7 @@ jobs:
   smoke:
     name: release/smoke
     # Inputs mirror release.yml with dry-run added.
-    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v3.0.0
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v3.0.2
     with:
       flow-type: public
       java-version: '21'
