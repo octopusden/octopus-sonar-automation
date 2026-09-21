@@ -12,6 +12,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint")
     // Octopus quality-gates convention plugin — configures detekt/ktlint and wires qualityStatic.
     id("org.octopusden.octopus-quality")
+    id("org.sonarqube")
 }
 
 group = "org.octopusden.octopus.sonar"
