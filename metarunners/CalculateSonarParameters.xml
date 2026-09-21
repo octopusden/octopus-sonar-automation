@@ -28,6 +28,7 @@
             <param name="COMPONENT_NAME" value="%COMPONENT_NAME%" />
             <param name="COMPONENT_VERSION" value="%BUILD_VERSION%" />
             <param name="SONAR_CONFIG_DIR" value="sonar-config" />
+            <param name="GIT_WORK_DIR" value="" spec="text display='normal' description='Directory of the checked-out git repository the target branch should be fetched into (the VCS root containing SONAR_TARGET_BRANCH). Leave blank when a VCS root is checked out at the build checkout root; required when checkout rules relocate every VCS root into a subdirectory.'"/>
         </parameters>
         <build-runners>
             <runner name="Checkout Sonar Configuration" type="CloneGitRepository">
@@ -53,6 +54,8 @@
                     <param name="script.content"><![CDATA[
 git fetch origin -- "%SONAR_TARGET_BRANCH%"
 ]]></param>
+                    <param name="teamcity.build.workingDir" value="%GIT_WORK_DIR%" />
+                    <param name="teamcity.step.conditions" value='[["DOES_NOT_EQUAL","SONAR_TARGET_BRANCH",""]]' />
                     <param name="teamcity.step.mode" value="default" />
                     <param name="use.custom.script" value="true" />
                 </parameters>
