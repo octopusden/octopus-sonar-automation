@@ -6,20 +6,22 @@ on:
 
 jobs:
   build:
-    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v2.7.1
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v3.0.2
+    permissions:
+      contents: write
+      packages: write
     with:
       flow-type: public
-      # Exempt from the Central size guard that v2.6.0 added. The exemption is needed on the
-      # SIZE axis, not the name axis: `tasks.jar { enabled = false }` plus a shadowJar with an
-      # empty archiveClassifier means the fat jar occupies the unclassified `jar` slot itself,
-      # so the filename carries no `-all` for the guard's name pattern to match. Measured on
-      # release 2.0.13: sonar-automation-2.0.13.jar is 16,790,778 bytes (~16.01 MB) against the
-      # 8 MB default, so the first release on octopus-base v2.6.0 or later would fail before upload without this.
-      #
-      # It must keep publishing: metarunners/DownloadSonarAutomationJAR.xml resolves
-      # ${group}:${name}:${version}:jar — no classifier — and runs `java -jar` on it.
-      fat-jar-publication-allowlist: sonar-automation
       java-version: '21'
       commit-hash: ${{ github.event.client_payload.commit }}
       build-version: ${{ github.event.client_payload.project_version }}
+      # The one publication moves in whole, so nothing is left for Central.
+      publish-to-nexus: false
+      github-packages-publications: ":maven"
+      github-packages-repository: octopusden/octopus-maven-packages
+      # With publish-to-nexus false nothing reaches Maven Central, so the artifact poll that
+      # check-and-register.yml performed could never succeed and registration would never run.
+      # Register inside the release instead: that job needs the build and the tag, so it still
+      # cannot outrun the deliverable.
+      register-release-immediately: true
     secrets: inherit
