@@ -56,7 +56,6 @@
 git fetch origin -- "%SONAR_TARGET_BRANCH%"
 ]]></param>
                     <param name="teamcity.build.workingDir" value="%WORK_DIR%" />
-                    <param name="teamcity.step.conditions" value="[[&quot;EQUALS&quot;,&quot;SKIP_SONAR_METARUNNER_EXECUTION&quot;,&quot;false&quot;]]" />
                     <param name="teamcity.step.mode" value="default" />
                     <param name="use.custom.script" value="true" />
                 </parameters>
