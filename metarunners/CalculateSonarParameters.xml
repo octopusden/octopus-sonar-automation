@@ -9,6 +9,7 @@
         * VCS_FACADE_URL
         * GIT_SERVER_HOSTNAME
         * SONAR_JDK_HOME
+        * WORK_DIR
         Sets TeamCity parameters for SonarQube analysis:
         * SONAR_PROJECT_KEY
         * SONAR_PROJECT_NAME
