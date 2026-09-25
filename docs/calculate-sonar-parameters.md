@@ -16,6 +16,14 @@ These parameters are then picked up by the downstream Sonar metarunner.
 
 Components absent from the Components Registry — the `octopusden/*` open-source repositories on GitHub — are supported too; see [Unregistered Components](#unregistered-components).
 
+### Fetch Target Branch
+
+The meta-runner's last step runs `git fetch origin -- <SONAR_TARGET_BRANCH>`, so the scanner can compare the source branch with the target branch locally.
+
+The step runs only when `SKIP_SONAR_METARUNNER_EXECUTION` is `false`; a skipped scan needs no fetch.
+
+The step runs in `WORK_DIR`, which defaults to the build configuration's `%WORK_DIR%` and must lie inside the analysed git working tree. Blank means the checkout directory. When the analysed repository is checked out in a subdirectory of the checkout directory, set `WORK_DIR` to a directory inside it (for example `%teamcity.build.checkoutDir%/core`). The build configuration must define `WORK_DIR`, otherwise the reference is unresolved and the build does not start.
+
 ### Legacy Override Support
 
 Components with SonarQube analysis already set up manually are supported via configuration files from the `RELENG/sonar-config` repository:

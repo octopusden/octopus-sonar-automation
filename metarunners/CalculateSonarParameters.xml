@@ -28,6 +28,7 @@
             <param name="COMPONENT_NAME" value="%COMPONENT_NAME%" />
             <param name="COMPONENT_VERSION" value="%BUILD_VERSION%" />
             <param name="SONAR_CONFIG_DIR" value="sonar-config" />
+            <param name="WORK_DIR" value="%WORK_DIR%" spec="text display='normal' description='Directory inside the analysed git working tree, where the target branch is fetched. Leave blank to use the default checkout directory.'" />
         </parameters>
         <build-runners>
             <runner name="Checkout Sonar Configuration" type="CloneGitRepository">
@@ -53,6 +54,8 @@
                     <param name="script.content"><![CDATA[
 git fetch origin -- "%SONAR_TARGET_BRANCH%"
 ]]></param>
+                    <param name="teamcity.build.workingDir" value="%WORK_DIR%" />
+                    <param name="teamcity.step.conditions" value="[[&quot;EQUALS&quot;,&quot;SKIP_SONAR_METARUNNER_EXECUTION&quot;,&quot;false&quot;]]" />
                     <param name="teamcity.step.mode" value="default" />
                     <param name="use.custom.script" value="true" />
                 </parameters>
