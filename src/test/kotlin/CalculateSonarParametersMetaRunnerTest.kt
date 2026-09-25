@@ -5,6 +5,7 @@ import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class CalculateSonarParametersMetaRunnerTest {
     private val metaRunner =
@@ -41,10 +42,7 @@ class CalculateSonarParametersMetaRunnerTest {
     }
 
     @Test
-    fun `fetch step runs only when the scan runs`() {
-        assertEquals(
-            """[["EQUALS","SKIP_SONAR_METARUNNER_EXECUTION","false"]]""",
-            fetchStep["teamcity.step.conditions"],
-        )
+    fun `fetch step runs unconditionally, since the build-tool plugin scan needs the target branch too`() {
+        assertNull(fetchStep["teamcity.step.conditions"])
     }
 }
