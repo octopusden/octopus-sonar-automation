@@ -35,6 +35,10 @@ None.
 
 - `metarunners/CalculateSonarParameters.xml` and its document `docs/calculate-sonar-parameters.md`.
 - Existing configurations with a default `WORK_DIR` (the checkout directory) behave as today.
+- The default `%WORK_DIR%` needs `WORK_DIR` defined in the build configuration; where it is not
+  (the RC and release templates define none), TeamCity treats the reference as unresolved and the
+  build does not start. This is the same trap `SonarRunner.xml:23` already has; the meta-runner is
+  used by the compile templates, which define `WORK_DIR`.
 - Independent of the generator; can ship any time after the registry. A local, unmerged prototype
   of the same step change exists; it is redone on mainline, not cherry-picked, because it also
   carries an internal-only document.
