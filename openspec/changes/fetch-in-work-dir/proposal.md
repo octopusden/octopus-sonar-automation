@@ -4,8 +4,7 @@ The *Calculate Sonar Parameters* meta-runner runs its "Fetch target branch" step
 at the checkout root (`metarunners/CalculateSonarParameters.xml:51-59`). When a build places the
 analysed repository in a subdirectory of the checkout root (a Checkout Directory, with the build
 running in a Build Working Directory inside it), there is no `.git` at the root, the step fails and
-the build fails, although the analysis itself would work. The step also runs when the scan is
-skipped. Program change: `onb-001-multi-vcs-root-component` (ADR-001 revision 3) in the program
+the build fails, although the analysis itself would work. Program change: `onb-001-multi-vcs-root-component` (ADR-001 revision 3) in the program
 repository. Baseline: `test/onb-001-baseline` (`892fabd`).
 
 ## What Changes
@@ -14,8 +13,10 @@ repository. Baseline: `test/onb-001-baseline` (`892fabd`).
   to the build configuration's `%WORK_DIR%`, as `metarunners/SonarRunner.xml:23` already does; the
   compile templates own `WORK_DIR`, and the build-chain generator sets it per configuration when a
   Build Working Directory is registered. Blank means the checkout directory.
-- The fetch step runs only when the Sonar scan runs (`SKIP_SONAR_METARUNNER_EXECUTION` is
-  `false`).
+- The fetch step stays unconditional. `SKIP_SONAR_METARUNNER_EXECUTION` is `true` also for
+  Java/Kotlin Gradle and Maven components on modern JDKs, which the build-tool plugin scans in
+  another step, and that scan needs the target branch (`sonar.pullrequest.base`,
+  `sonar.newCode.referenceBranch`); gating the fetch on the flag would drop it for all of them.
 - The Kotlin parameter calculation is unchanged: `CommitStampResolver` already takes the first
   build revision that matches a registry root, and the generator attaches the Build Working
   Directory's repository first.
@@ -24,8 +25,8 @@ repository. Baseline: `test/onb-001-baseline` (`892fabd`).
 
 ### New Capabilities
 
-- `sonar-target-branch-fetch`: where and when the meta-runner fetches the pull-request target
-  branch.
+- `sonar-target-branch-fetch`: where the meta-runner fetches the pull-request target branch, and
+  that it does so for every scan path.
 
 ### Modified Capabilities
 

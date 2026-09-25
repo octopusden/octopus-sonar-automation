@@ -20,10 +20,12 @@ checkout directory.
 - **WHEN** `WORK_DIR` is the checkout directory
 - **THEN** the fetch step runs at the checkout root, as before
 
-### Requirement: No fetch without a scan
+### Requirement: Fetch for every scan path
 
-The "Fetch target branch" step SHALL run only when `SKIP_SONAR_METARUNNER_EXECUTION` is `false`.
+The "Fetch target branch" step SHALL run unconditionally, because both the SonarQube Runner
+meta-runner and the Gradle or Maven plugin scan need the target branch.
 
-#### Scenario: Scan skipped
-- **WHEN** a build has `SKIP_SONAR_METARUNNER_EXECUTION=true`
-- **THEN** the fetch step is skipped and the build does not fail on it
+#### Scenario: Fetch runs for both scan paths
+- **WHEN** a build has `SKIP_SONAR_METARUNNER_EXECUTION=true` because the build-tool plugin scans
+  the component
+- **THEN** the fetch step still runs in `WORK_DIR`, and the plugin scan finds the target branch
