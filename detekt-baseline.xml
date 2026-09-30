@@ -11,6 +11,7 @@
     <ID>InvalidPackageDeclaration:BranchUtils.kt$package org.octopusden.octopus.sonar.util</ID>
     <ID>InvalidPackageDeclaration:BranchUtilsTest.kt$package org.octopusden.octopus.sonar.util</ID>
     <ID>InvalidPackageDeclaration:CalculateSonarParametersCommand.kt$package org.octopusden.octopus.sonar.command</ID>
+    <ID>InvalidPackageDeclaration:CalculateSonarParametersMetaRunnerTest.kt$package org.octopusden.octopus.sonar</ID>
     <ID>InvalidPackageDeclaration:CommitStampDTO.kt$package org.octopusden.octopus.sonar.dto</ID>
     <ID>InvalidPackageDeclaration:CommitStampResolver.kt$package org.octopusden.octopus.sonar.resolver.parameters</ID>
     <ID>InvalidPackageDeclaration:CommitStampResolverTest.kt$package org.octopusden.octopus.sonar.resolver</ID>

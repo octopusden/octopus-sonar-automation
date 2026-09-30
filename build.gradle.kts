@@ -83,6 +83,7 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+    inputs.dir("metarunners")
 }
 
 tasks.shadowJar {
